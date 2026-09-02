@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101417">
+  <meta name="description" content="ML Consulting begleitet die Suche, Bewertung, Vermittlung und Abwicklung von Baumaschinen in Südtirol und Umgebung.">
+  <title>ML Consulting | Baumaschinenvermittlung & Beratung</title>
+  <style>
+    :root {
+      --ink: #101417;
+      --ink-2: #171d21;
+      --paper: #ffffff;
+      --soft: #f3f4f2;
+      --line: #dfe2df;
+      --muted: #5d6569;
+      --orange: #ff641f;
+      --orange-dark: #d94708;
+      --radius: 20px;
+      --shadow: 0 24px 70px rgba(16, 20, 23, .14);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    body.menu-open { overflow: hidden; }
+    a { color: inherit; text-decoration: none; }
+    button, select { font: inherit; }
+    img { display: block; max-width: 100%; }
+    section { scroll-margin-top: 82px; }
+
+    .wrap { width: min(1180px, calc(100% - 48px)); margin: 0 auto; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      color: var(--orange-dark);
+      font-size: .78rem;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { width: 28px; height: 2px; background: var(--orange); content: ""; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { text-wrap: balance; }
+    h1 {
+      max-width: 850px;
+      margin-bottom: 24px;
+      font-size: clamp(3rem, 7.2vw, 6.4rem);
+      font-weight: 900;
+      letter-spacing: -.065em;
+      line-height: .93;
+    }
+    h2 {
+      max-width: 780px;
+      margin-bottom: 18px;
+      font-size: clamp(2.25rem, 4.8vw, 4.6rem);
+      font-weight: 880;
+      letter-spacing: -.055em;
+      line-height: 1;
+    }
+    h3 { margin-bottom: 10px; font-size: 1.28rem; line-height: 1.2; }
+    .orange { color: var(--orange); }
+    .muted { color: var(--muted); }
+    .lead { max-width: 700px; color: #c8ced1; font-size: clamp(1.08rem, 1.8vw, 1.3rem); line-height: 1.65; }
+    .section-lead { max-width: 680px; margin-bottom: 0; font-size: 1.08rem; }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 50;
+      border-bottom: 1px solid rgba(255,255,255,.11);
+      background: rgba(16,20,23,.9);
+      color: #fff;
+      backdrop-filter: blur(16px);
+    }
+    .nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+    .brand { display: inline-flex; align-items: center; font-size: 1.08rem; font-weight: 900; letter-spacing: .025em; }
+    .brand-mark {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      margin-right: 11px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--orange);
+      color: #fff;
+      font-size: .98rem;
+      letter-spacing: -.04em;
+    }
+    .menu { display: flex; align-items: center; gap: 30px; margin-left: auto; }
+    .menu a { color: #d7dcde; font-size: .9rem; font-weight: 700; transition: color .2s ease; }
+    .menu a:hover, .menu a:focus-visible { color: #fff; }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+    .lang {
+      min-height: 43px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 10px;
+      background: #20272b;
+      color: #fff;
+      padding: 0 10px;
+      cursor: pointer;
+    }
+    .menu-toggle {
+      display: none;
+      width: 43px;
+      height: 43px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 10px;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+    }
+    .menu-toggle span, .menu-toggle::before, .menu-toggle::after {
+      display: block;
+      width: 19px;
+      height: 2px;
+      margin: 4px auto;
+      background: currentColor;
+      content: "";
+    }
+
+    .btn {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px solid var(--orange);
+      border-radius: 11px;
+      background: var(--orange);
+      color: #fff;
+      padding: 0 19px;
+      font-weight: 850;
+      line-height: 1;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:hover, .btn:focus-visible { transform: translateY(-2px); background: #ff7639; border-color: #ff7639; }
+    .btn-dark { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.06); }
+    .btn-dark:hover, .btn-dark:focus-visible { border-color: #fff; background: #fff; color: var(--ink); }
+    .btn-light { border-color: #c9ceca; background: #fff; color: var(--ink); }
+    .btn-light:hover, .btn-light:focus-visible { border-color: var(--ink); background: var(--ink); color: #fff; }
+    .btn-small { min-height: 43px; padding: 0 15px; font-size: .88rem; }
+
+    .hero { position: relative; overflow: hidden; background: var(--ink); color: #fff; padding: 148px 0 70px; }
+    .hero::after {
+      position: absolute;
+      right: -20%;
+      bottom: -45%;
+      width: 620px;
+      height: 620px;
+      border: 130px solid rgba(255,100,31,.09);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(360px, .72fr); gap: 56px; align-items: end; }
+    .hero-copy { position: relative; z-index: 2; padding-bottom: 24px; }
+    .hero .eyebrow { color: #ff9b70; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+    .hero-visual { position: relative; z-index: 1; min-height: 570px; }
+    .hero-visual img { width: 100%; height: 570px; border-radius: 4px 4px var(--radius) var(--radius); object-fit: cover; filter: saturate(.78) contrast(1.05); }
+    .hero-visual::before {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      border-radius: 4px 4px var(--radius) var(--radius);
+      background: linear-gradient(180deg, rgba(16,20,23,.04), rgba(16,20,23,.6));
+      content: "";
+    }
+    .visual-note {
+      position: absolute;
+      z-index: 3;
+      right: 20px;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 14px;
+      background: rgba(16,20,23,.85);
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+    .visual-note strong { display: block; font-size: 1.08rem; }
+    .visual-note span { color: #bac2c6; font-size: .9rem; }
+    .visual-number { color: var(--orange); font-size: 2rem; font-weight: 900; line-height: 1; }
+
+    .ticker { overflow: hidden; border-top: 1px solid rgba(255,255,255,.09); background: var(--ink); color: #fff; }
+    .track { display: flex; width: max-content; animation: ticker 27s linear infinite; }
+    .track-group { display: flex; align-items: center; }
+    .track span { display: inline-flex; align-items: center; padding: 20px 25px; font-size: .8rem; font-weight: 850; letter-spacing: .11em; white-space: nowrap; }
+    .track span::before { width: 7px; height: 7px; margin-right: 25px; border-radius: 50%; background: var(--orange); content: ""; }
+    @keyframes ticker { to { transform: translateX(-50%); } }
+
+    .section { padding: 110px 0; }
+    .section-soft { background: var(--soft); }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 50px; margin-bottom: 52px; }
+    .section-head > * { margin-bottom: 0; }
+    .section-head .section-lead { max-width: 450px; }
+
+    .service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+    .service-card { position: relative; min-height: 265px; border-bottom: 1px solid var(--line); padding: 38px 42px 38px 0; }
+    .service-card:nth-child(odd) { border-right: 1px solid var(--line); }
+    .service-card:nth-child(even) { padding-left: 42px; }
+    .service-no { display: block; margin-bottom: 34px; color: var(--orange-dark); font-size: .83rem; font-weight: 900; letter-spacing: .08em; }
+    .service-card h3 { font-size: clamp(1.45rem, 2.5vw, 2rem); letter-spacing: -.025em; }
+    .service-card p { max-width: 470px; margin-bottom: 0; }
+
+    .audience-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .audience-card { position: relative; overflow: hidden; min-height: 430px; border-radius: var(--radius); padding: 45px; }
+    .audience-card:first-child { background: var(--ink); color: #fff; }
+    .audience-card:last-child { border: 1px solid var(--line); background: #fff; }
+    .audience-label { display: inline-block; margin-bottom: 70px; color: var(--orange); font-size: .82rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .audience-card h3 { max-width: 460px; margin-bottom: 28px; font-size: clamp(1.8rem, 3.3vw, 3.2rem); letter-spacing: -.045em; }
+    .check-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+    .check-list li { display: flex; gap: 12px; align-items: flex-start; }
+    .check-list li::before { color: var(--orange); font-weight: 900; content: "→"; }
+    .audience-card:first-child .check-list { color: #cbd1d4; }
+
+    .process { background: var(--ink); color: #fff; }
+    .process .section-lead { color: #bdc5c9; }
+    .process .eyebrow { color: #ff9b70; }
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #384045; }
+    .step { min-height: 260px; border-right: 1px solid #384045; padding: 32px 28px 28px 0; }
+    .step + .step { padding-left: 28px; }
+    .step:last-child { border-right: 0; }
+    .step-no { display: block; margin-bottom: 58px; color: var(--orange); font-size: .9rem; font-weight: 900; }
+    .step p { margin-bottom: 0; color: #b8c0c4; font-size: .94rem; }
+
+    .about-grid { display: grid; grid-template-columns: .75fr 1.25fr; gap: 80px; align-items: start; }
+    .about-name { position: sticky; top: 120px; }
+    .about-name strong { display: block; font-size: clamp(2rem, 4vw, 3.7rem); letter-spacing: -.05em; line-height: 1; }
+    .about-name span { display: block; margin-top: 13px; color: var(--orange-dark); font-weight: 800; }
+    .about-copy { max-width: 720px; }
+    .about-copy .large { color: #252b2e; font-size: clamp(1.45rem, 2.7vw, 2.25rem); font-weight: 760; letter-spacing: -.025em; line-height: 1.35; }
+    .about-points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 42px; }
+    .about-point { border-top: 3px solid var(--orange); background: var(--soft); padding: 21px; }
+    .about-point strong { display: block; margin-bottom: 5px; }
+    .about-point span { color: var(--muted); font-size: .92rem; }
+
+    .contact { padding: 100px 0; background: var(--orange); color: #fff; }
+    .contact-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 70px; align-items: end; }
+    .contact .eyebrow { color: #fff; }
+    .contact .eyebrow::before { background: #fff; }
+    .contact h2 { max-width: 850px; margin-bottom: 0; }
+    .contact-panel { border-left: 1px solid rgba(255,255,255,.5); padding-left: 30px; }
+    .contact-panel p { margin-bottom: 18px; color: #fff2ec; }
+    .mail { display: inline-block; margin-bottom: 24px; font-size: clamp(1.08rem, 2vw, 1.35rem); font-weight: 900; word-break: break-word; }
+    .contact .btn { border-color: #fff; background: #fff; color: var(--ink); }
+    .contact .btn:hover, .contact .btn:focus-visible { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+    footer { background: #090c0e; color: #aeb6ba; padding: 30px 0; }
+    .footer-row { display: flex; justify-content: space-between; gap: 25px; font-size: .88rem; }
+
+    :focus-visible { outline: 3px solid #ffb08e; outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .track { animation: none; }
+      .btn { transition: none; }
+    }
+    @media (max-width: 980px) {
+      .menu { display: none; }
+      .menu-toggle { display: block; }
+      .menu.open {
+        position: fixed;
+        inset: 76px 0 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        background: var(--ink);
+        padding: 24px;
+      }
+      .menu.open a { width: 100%; border-bottom: 1px solid #30383c; padding: 20px 0; font-size: 1.2rem; }
+      .nav-actions .btn { display: none; }
+      .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+      .hero-copy { max-width: 820px; }
+      .hero-visual { min-height: 430px; }
+      .hero-visual img { height: 430px; }
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .step:nth-child(2) { border-right: 0; }
+      .step:nth-child(-n+2) { border-bottom: 1px solid #384045; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .about-name { position: static; }
+      .contact-grid { grid-template-columns: 1fr; gap: 45px; }
+    }
+    @media (max-width: 700px) {
+      .wrap { width: min(100% - 32px, 1180px); }
+      .nav { min-height: 68px; }
+      .brand-mark { width: 36px; height: 36px; }
+      .brand-text { font-size: .92rem; }
+      .menu.open { inset: 68px 0 0; }
+      .hero { padding: 118px 0 52px; }
+      .hero-visual, .hero-visual img { min-height: 350px; height: 350px; }
+      .visual-note { right: 12px; bottom: 12px; left: 12px; padding: 15px; }
+      .section { padding: 78px 0; }
+      .section-head { display: block; margin-bottom: 38px; }
+      .section-head .section-lead { margin-top: 23px; }
+      .service-grid, .audience-grid, .about-points { grid-template-columns: 1fr; }
+      .service-card, .service-card:nth-child(even) { min-height: 0; border-right: 0; padding: 30px 0; }
+      .service-no { margin-bottom: 18px; }
+      .audience-card { min-height: 0; padding: 32px 26px; }
+      .audience-label { margin-bottom: 46px; }
+      .steps { grid-template-columns: 1fr; }
+      .step, .step + .step { min-height: 0; border-right: 0; border-bottom: 1px solid #384045; padding: 28px 0; }
+      .step:last-child { border-bottom: 0; }
+      .step-no { margin-bottom: 20px; }
+      .contact { padding: 76px 0; }
+      .contact-panel { border-top: 1px solid rgba(255,255,255,.5); border-left: 0; padding: 28px 0 0; }
+      .footer-row { flex-direction: column; gap: 8px; }
+    }
+    @media (max-width: 410px) {
+      h1 { font-size: 2.75rem; }
+      .lang { min-height: 40px; }
+      .menu-toggle { width: 40px; height: 40px; }
+      .hero-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap nav">
+      <a class="brand" href="#top" aria-label="ML Consulting Startseite">
+        <span class="brand-mark">ML</span><span class="brand-text">CONSULTING</span>
+      </a>
+      <nav id="menu" class="menu" aria-label="Hauptnavigation">
+        <a href="#leistungen" data-k="navServices">Leistungen</a>
+        <a href="#zielgruppen" data-k="navClients">Für Käufer & Verkäufer</a>
+        <a href="#ablauf" data-k="navProcess">Ablauf</a>
+        <a href="#ueber" data-k="navAbout">Über mich</a>
+      </nav>
+      <div class="nav-actions">
+        <select id="lang" class="lang" aria-label="Sprache wählen">
+          <option value="DE">DE</option>
+          <option value="IT">IT</option>
+          <option value="EN">EN</option>
+          <option value="ES">ES</option>
+        </select>
+        <a class="btn btn-small" href="#kontakt" data-k="navContact">Kontakt</a>
+        <button id="menuToggle" class="menu-toggle" type="button" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menu"><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow" data-k="heroEyebrow">Baumaschinenvermittlung & Beratung</div>
+          <h1 data-k="heroTitle">Ich bringe <span class="orange">Maschinen, Menschen</span> und Abläufe zusammen.</h1>
+          <p class="lead" data-k="heroLead">Sie suchen eine passende Baumaschine, möchten eine bestehende verkaufen oder brauchen Unterstützung bei Bewertung und Abwicklung? Ich begleite den gesamten Prozess persönlich und praxisnah.</p>
+          <div class="hero-actions">
+            <a class="btn" href="mailto:ml.consulting@outlook.it?subject=Projektanfrage%20ML%20Consulting" data-k="heroContact">Projekt besprechen →</a>
+            <a class="btn btn-dark" href="#leistungen" data-k="heroMore">Was ich übernehme</a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <img src="https://images.unsplash.com/photo-1780054984791-ef3f58ca753e?auto=format&amp;fit=crop&amp;w=1400&amp;q=84" alt="Baumaschine auf einer Baustelle">
+          <div class="visual-note">
+            <div class="visual-number">01</div>
+            <div><strong data-k="visualTitle">Ein Ansprechpartner</strong><span data-k="visualText">Von der ersten Anfrage bis zur Übergabe</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="track">
+        <div class="track-group"><span data-k="tick1">Bedarf klären</span><span data-k="tick2">Maschine suchen</span><span data-k="tick3">Angebot bewerten</span><span data-k="tick4">Verhandlung begleiten</span><span data-k="tick5">Abwicklung koordinieren</span></div>
+        <div class="track-group"><span data-k="tick1">Bedarf klären</span><span data-k="tick2">Maschine suchen</span><span data-k="tick3">Angebot bewerten</span><span data-k="tick4">Verhandlung begleiten</span><span data-k="tick5">Abwicklung koordinieren</span></div>
+      </div>
+    </div>
+
+    <section id="leistungen" class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow" data-k="servicesEyebrow">Was ich mache</div>
+            <h2 data-k="servicesTitle">Ich übernehme die Arbeit zwischen Bedarf und Übergabe.</h2>
+          </div>
+          <p class="section-lead muted" data-k="servicesLead">Keine anonyme Plattform und kein Maschinenkatalog: Sie schildern mir Ihr Ziel, ich strukturiere die nächsten Schritte und halte den Prozess in Bewegung.</p>
+        </div>
+        <div class="service-grid">
+          <article class="service-card">
+            <span class="service-no">01 / 04</span>
+            <h3 data-k="service1Title">Maschinen gezielt suchen</h3>
+            <p class="muted" data-k="service1Text">Ich kläre Einsatz, Größe, Ausstattung und Budget, recherchiere passende Optionen und treffe eine sinnvolle Vorauswahl.</p>
+          </article>
+          <article class="service-card">
+            <span class="service-no">02 / 04</span>
+            <h3 data-k="service2Title">Verkauf professionell begleiten</h3>
+            <p class="muted" data-k="service2Text">Ich bereite die relevanten Maschinendaten auf, unterstütze bei der Positionierung und koordiniere konkrete Interessentenanfragen.</p>
+          </article>
+          <article class="service-card">
+            <span class="service-no">03 / 04</span>
+            <h3 data-k="service3Title">Angebote und Zustand einordnen</h3>
+            <p class="muted" data-k="service3Text">Ich unterstütze bei der Einschätzung von Preis, Ausstattung, Betriebsstunden, Unterlagen und technischem Gesamtbild.</p>
+          </article>
+          <article class="service-card">
+            <span class="service-no">04 / 04</span>
+            <h3 data-k="service4Title">Abwicklung koordinieren</h3>
+            <p class="muted" data-k="service4Text">Auf Wunsch begleite ich Kommunikation, Verhandlung, Transport, Dokumente, Übergabe und Ersatzteilanfragen.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="zielgruppen" class="section section-soft">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow" data-k="clientsEyebrow">Ihre Ausgangslage</div>
+            <h2 data-k="clientsTitle">Klare Unterstützung auf beiden Seiten.</h2>
+          </div>
+          <p class="section-lead muted" data-k="clientsLead">Ich konzentriere mich auf das konkrete Ziel – eine passende Maschine finden oder eine vorhandene sinnvoll verkaufen.</p>
+        </div>
+        <div class="audience-grid">
+          <article class="audience-card">
+            <span class="audience-label" data-k="buyerLabel">Für Käufer</span>
+            <h3 data-k="buyerTitle">Die richtige Maschine statt irgendeines Angebots.</h3>
+            <ul class="check-list">
+              <li data-k="buyer1">Anforderung und Budget sauber definieren</li>
+              <li data-k="buyer2">Passende Angebote identifizieren und vergleichen</li>
+              <li data-k="buyer3">Technische und kaufmännische Punkte einordnen</li>
+              <li data-k="buyer4">Entscheidung und Übergabe strukturiert begleiten</li>
+            </ul>
+          </article>
+          <article class="audience-card">
+            <span class="audience-label" data-k="sellerLabel">Für Verkäufer</span>
+            <h3 data-k="sellerTitle">Die Maschine nachvollziehbar am Markt platzieren.</h3>
+            <ul class="check-list">
+              <li data-k="seller1">Daten, Ausstattung und Zustand erfassen</li>
+              <li data-k="seller2">Realistische Marktpositionierung vorbereiten</li>
+              <li data-k="seller3">Interessenten und Rückfragen koordinieren</li>
+              <li data-k="seller4">Verhandlung und Abwicklung begleiten</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="ablauf" class="section process">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow" data-k="processEyebrow">So arbeite ich</div>
+            <h2 data-k="processTitle">Ein klarer Prozess. Direkte Kommunikation.</h2>
+          </div>
+          <p class="section-lead" data-k="processLead">Sie wissen jederzeit, wo das Projekt steht und welcher Schritt als Nächstes ansteht.</p>
+        </div>
+        <div class="steps">
+          <article class="step"><span class="step-no">01</span><h3 data-k="step1Title">Ausgangslage</h3><p data-k="step1Text">Wir klären Ziel, Anforderungen, Zeitrahmen und Budget.</p></article>
+          <article class="step"><span class="step-no">02</span><h3 data-k="step2Title">Optionen</h3><p data-k="step2Text">Ich recherchiere, sortiere und stelle passende Wege gegenüber.</p></article>
+          <article class="step"><span class="step-no">03</span><h3 data-k="step3Title">Entscheidung</h3><p data-k="step3Text">Wir prüfen die wesentlichen Fakten und stimmen das Vorgehen ab.</p></article>
+          <article class="step"><span class="step-no">04</span><h3 data-k="step4Title">Abwicklung</h3><p data-k="step4Text">Ich begleite die vereinbarten Schritte bis zur Übergabe.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="ueber" class="section">
+      <div class="wrap about-grid">
+        <div class="about-name">
+          <div class="eyebrow" data-k="aboutEyebrow">Persönlich betreut</div>
+          <strong>Manuel<br>Liensberger</strong>
+          <span data-k="aboutRole">ML Consulting · Südtirol</span>
+        </div>
+        <div class="about-copy">
+          <p class="large" data-k="aboutLead">Ich verbinde technisches Verständnis mit Erfahrung im Vertrieb von Baumaschinen. Dadurch kann ich Anforderungen aus der Praxis schnell einordnen und Projekte zielgerichtet begleiten.</p>
+          <p class="muted" data-k="aboutText">Mein Anspruch ist eine klare, verlässliche Zusammenarbeit: direkt erreichbar, nachvollziehbar in der Kommunikation und mit Blick auf eine Lösung, die zum tatsächlichen Einsatz passt.</p>
+          <div class="about-points">
+            <div class="about-point"><strong data-k="aboutPoint1Title">Praxisnah</strong><span data-k="aboutPoint1Text">Technische Anforderungen verständlich eingeordnet</span></div>
+            <div class="about-point"><strong data-k="aboutPoint2Title">Persönlich</strong><span data-k="aboutPoint2Text">Ein direkter Ansprechpartner im gesamten Ablauf</span></div>
+            <div class="about-point"><strong data-k="aboutPoint3Title">Strukturiert</strong><span data-k="aboutPoint3Text">Klare Schritte von der Anfrage bis zur Übergabe</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="kontakt" class="contact">
+      <div class="wrap contact-grid">
+        <div>
+          <div class="eyebrow" data-k="contactEyebrow">Nächster Schritt</div>
+          <h2 data-k="contactTitle">Erzählen Sie mir kurz, welche Maschine Sie suchen oder verkaufen möchten.</h2>
+        </div>
+        <div class="contact-panel">
+          <p data-k="contactText">Am besten nennen Sie Maschinentyp, Hersteller und Modell, Baujahr, Betriebsstunden, Standort und Ihren gewünschten Zeitrahmen.</p>
+          <a class="mail" href="mailto:ml.consulting@outlook.it">ml.consulting@outlook.it</a><br>
+          <a class="btn" href="mailto:ml.consulting@outlook.it?subject=Anfrage%20ML%20Consulting" data-k="contactButton">Anfrage senden →</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-row"><span>© 2026 ML Consulting</span><span data-k="footerRegion">Baumaschinenvermittlung & Beratung · Südtirol</span></div>
+  </footer>
+
+  <script>
+    const translations = {
+      DE: {
+        metaTitle: "ML Consulting | Baumaschinenvermittlung & Beratung", metaDescription: "ML Consulting begleitet die Suche, Bewertung, Vermittlung und Abwicklung von Baumaschinen in Südtirol und Umgebung.",
+        navServices: "Leistungen", navClients: "Für Käufer & Verkäufer", navProcess: "Ablauf", navAbout: "Über mich", navContact: "Kontakt",
+        heroEyebrow: "Baumaschinenvermittlung & Beratung", heroTitle: "Ich bringe <span class=\"orange\">Maschinen, Menschen</span> und Abläufe zusammen.", heroLead: "Sie suchen eine passende Baumaschine, möchten eine bestehende verkaufen oder brauchen Unterstützung bei Bewertung und Abwicklung? Ich begleite den gesamten Prozess persönlich und praxisnah.", heroContact: "Projekt besprechen →", heroMore: "Was ich übernehme",
+        visualTitle: "Ein Ansprechpartner", visualText: "Von der ersten Anfrage bis zur Übergabe", tick1: "Bedarf klären", tick2: "Maschine suchen", tick3: "Angebot bewerten", tick4: "Verhandlung begleiten", tick5: "Abwicklung koordinieren",
+        servicesEyebrow: "Was ich mache", servicesTitle: "Ich übernehme die Arbeit zwischen Bedarf und Übergabe.", servicesLead: "Keine anonyme Plattform und kein Maschinenkatalog: Sie schildern mir Ihr Ziel, ich strukturiere die nächsten Schritte und halte den Prozess in Bewegung.",
+        service1Title: "Maschinen gezielt suchen", service1Text: "Ich kläre Einsatz, Größe, Ausstattung und Budget, recherchiere passende Optionen und treffe eine sinnvolle Vorauswahl.", service2Title: "Verkauf professionell begleiten", service2Text: "Ich bereite die relevanten Maschinendaten auf, unterstütze bei der Positionierung und koordiniere konkrete Interessentenanfragen.", service3Title: "Angebote und Zustand einordnen", service3Text: "Ich unterstütze bei der Einschätzung von Preis, Ausstattung, Betriebsstunden, Unterlagen und technischem Gesamtbild.", service4Title: "Abwicklung koordinieren", service4Text: "Auf Wunsch begleite ich Kommunikation, Verhandlung, Transport, Dokumente, Übergabe und Ersatzteilanfragen.",
+        clientsEyebrow: "Ihre Ausgangslage", clientsTitle: "Klare Unterstützung auf beiden Seiten.", clientsLead: "Ich konzentriere mich auf das konkrete Ziel – eine passende Maschine finden oder eine vorhandene sinnvoll verkaufen.", buyerLabel: "Für Käufer", buyerTitle: "Die richtige Maschine statt irgendeines Angebots.", buyer1: "Anforderung und Budget sauber definieren", buyer2: "Passende Angebote identifizieren und vergleichen", buyer3: "Technische und kaufmännische Punkte einordnen", buyer4: "Entscheidung und Übergabe strukturiert begleiten", sellerLabel: "Für Verkäufer", sellerTitle: "Die Maschine nachvollziehbar am Markt platzieren.", seller1: "Daten, Ausstattung und Zustand erfassen", seller2: "Realistische Marktpositionierung vorbereiten", seller3: "Interessenten und Rückfragen koordinieren", seller4: "Verhandlung und Abwicklung begleiten",
+        processEyebrow: "So arbeite ich", processTitle: "Ein klarer Prozess. Direkte Kommunikation.", processLead: "Sie wissen jederzeit, wo das Projekt steht und welcher Schritt als Nächstes ansteht.", step1Title: "Ausgangslage", step1Text: "Wir klären Ziel, Anforderungen, Zeitrahmen und Budget.", step2Title: "Optionen", step2Text: "Ich recherchiere, sortiere und stelle passende Wege gegenüber.", step3Title: "Entscheidung", step3Text: "Wir prüfen die wesentlichen Fakten und stimmen das Vorgehen ab.", step4Title: "Abwicklung", step4Text: "Ich begleite die vereinbarten Schritte bis zur Übergabe.",
+        aboutEyebrow: "Persönlich betreut", aboutRole: "ML Consulting · Südtirol", aboutLead: "Ich verbinde technisches Verständnis mit Erfahrung im Vertrieb von Baumaschinen. Dadurch kann ich Anforderungen aus der Praxis schnell einordnen und Projekte zielgerichtet begleiten.", aboutText: "Mein Anspruch ist eine klare, verlässliche Zusammenarbeit: direkt erreichbar, nachvollziehbar in der Kommunikation und mit Blick auf eine Lösung, die zum tatsächlichen Einsatz passt.", aboutPoint1Title: "Praxisnah", aboutPoint1Text: "Technische Anforderungen verständlich eingeordnet", aboutPoint2Title: "Persönlich", aboutPoint2Text: "Ein direkter Ansprechpartner im gesamten Ablauf", aboutPoint3Title: "Strukturiert", aboutPoint3Text: "Klare Schritte von der Anfrage bis zur Übergabe",
+        contactEyebrow: "Nächster Schritt", contactTitle: "Erzählen Sie mir kurz, welche Maschine Sie suchen oder verkaufen möchten.", contactText: "Am besten nennen Sie Maschinentyp, Hersteller und Modell, Baujahr, Betriebsstunden, Standort und Ihren gewünschten Zeitrahmen.", contactButton: "Anfrage senden →", footerRegion: "Baumaschinenvermittlung & Beratung · Südtirol"
+      },
+      IT: {
+        metaTitle: "ML Consulting | Intermediazione e consulenza macchine edili", metaDescription: "ML Consulting segue ricerca, valutazione, intermediazione e gestione di macchine edili in Alto Adige e dintorni.",
+        navServices: "Servizi", navClients: "Per acquirenti e venditori", navProcess: "Come lavoro", navAbout: "Chi sono", navContact: "Contatto",
+        heroEyebrow: "Intermediazione e consulenza macchine edili", heroTitle: "Metto in contatto <span class=\"orange\">macchine, persone</span> e processi.", heroLead: "Cercate una macchina adatta, volete venderne una o avete bisogno di supporto per valutazione e gestione? Vi seguo personalmente durante l’intero processo, con un approccio concreto.", heroContact: "Parliamo del progetto →", heroMore: "Cosa posso fare",
+        visualTitle: "Un unico referente", visualText: "Dalla prima richiesta alla consegna", tick1: "Definire le esigenze", tick2: "Cercare la macchina", tick3: "Valutare l’offerta", tick4: "Seguire la trattativa", tick5: "Coordinare la gestione",
+        servicesEyebrow: "Cosa faccio", servicesTitle: "Gestisco il lavoro tra l’esigenza e la consegna.", servicesLead: "Non una piattaforma anonima né un catalogo: mi spiegate il vostro obiettivo, io organizzo i prossimi passi e porto avanti il processo.",
+        service1Title: "Ricerca mirata della macchina", service1Text: "Definisco impiego, dimensioni, allestimento e budget, cerco opzioni adatte e preparo una selezione utile.", service2Title: "Supporto professionale alla vendita", service2Text: "Organizzo i dati rilevanti della macchina, supporto il posizionamento e coordino le richieste concrete degli interessati.", service3Title: "Valutazione di offerta e condizioni", service3Text: "Supporto la valutazione di prezzo, dotazioni, ore di lavoro, documenti e quadro tecnico complessivo.", service4Title: "Coordinamento della gestione", service4Text: "Su richiesta seguo comunicazione, trattativa, trasporto, documenti, consegna e richieste di ricambi.",
+        clientsEyebrow: "Il vostro punto di partenza", clientsTitle: "Supporto chiaro per entrambe le parti.", clientsLead: "Mi concentro sull’obiettivo concreto: trovare la macchina adatta o vendere in modo efficace quella disponibile.", buyerLabel: "Per acquirenti", buyerTitle: "La macchina giusta, non un’offerta qualsiasi.", buyer1: "Definire con precisione requisiti e budget", buyer2: "Individuare e confrontare offerte adatte", buyer3: "Inquadrare gli aspetti tecnici e commerciali", buyer4: "Seguire in modo strutturato decisione e consegna", sellerLabel: "Per venditori", sellerTitle: "Posizionare la macchina sul mercato in modo comprensibile.", seller1: "Raccogliere dati, dotazioni e condizioni", seller2: "Preparare un posizionamento di mercato realistico", seller3: "Coordinare interessati e richieste", seller4: "Seguire trattativa e gestione",
+        processEyebrow: "Come lavoro", processTitle: "Un processo chiaro. Comunicazione diretta.", processLead: "Sapete sempre a che punto è il progetto e quale sarà il passo successivo.", step1Title: "Situazione iniziale", step1Text: "Definiamo obiettivo, requisiti, tempi e budget.", step2Title: "Opzioni", step2Text: "Cerco, seleziono e confronto le alternative adatte.", step3Title: "Decisione", step3Text: "Verifichiamo i dati essenziali e concordiamo come procedere.", step4Title: "Gestione", step4Text: "Seguo i passaggi concordati fino alla consegna.",
+        aboutEyebrow: "Seguiti personalmente", aboutRole: "ML Consulting · Alto Adige", aboutLead: "Unisco competenza tecnica ed esperienza nella vendita di macchine edili. Questo mi permette di comprendere rapidamente le esigenze operative e seguire ogni progetto in modo mirato.", aboutText: "Il mio obiettivo è una collaborazione chiara e affidabile: contatto diretto, comunicazione comprensibile e attenzione a una soluzione adatta all’impiego reale.", aboutPoint1Title: "Concreto", aboutPoint1Text: "Requisiti tecnici spiegati in modo comprensibile", aboutPoint2Title: "Personale", aboutPoint2Text: "Un referente diretto durante tutto il processo", aboutPoint3Title: "Strutturato", aboutPoint3Text: "Passaggi chiari dalla richiesta alla consegna",
+        contactEyebrow: "Prossimo passo", contactTitle: "Raccontatemi brevemente quale macchina cercate o volete vendere.", contactText: "Indicate preferibilmente tipo di macchina, produttore e modello, anno, ore di lavoro, ubicazione e tempistiche desiderate.", contactButton: "Invia richiesta →", footerRegion: "Intermediazione e consulenza macchine edili · Alto Adige"
+      },
+      EN: {
+        metaTitle: "ML Consulting | Construction equipment brokerage & consulting", metaDescription: "ML Consulting supports the search, valuation, brokerage and handling of construction equipment in South Tyrol and the surrounding region.",
+        navServices: "Services", navClients: "For buyers & sellers", navProcess: "Process", navAbout: "About me", navContact: "Contact",
+        heroEyebrow: "Construction equipment brokerage & consulting", heroTitle: "I connect <span class=\"orange\">equipment, people</span> and processes.", heroLead: "Are you looking for the right machine, planning to sell one, or do you need support with valuation and handling? I personally guide the entire process with a practical approach.", heroContact: "Discuss your project →", heroMore: "What I handle",
+        visualTitle: "One point of contact", visualText: "From the first request to handover", tick1: "Define requirements", tick2: "Find equipment", tick3: "Assess the offer", tick4: "Support negotiation", tick5: "Coordinate handling",
+        servicesEyebrow: "What I do", servicesTitle: "I handle the work between your requirement and handover.", servicesLead: "Not an anonymous platform or an equipment catalogue: you explain your objective, I organise the next steps and keep the process moving.",
+        service1Title: "Targeted equipment search", service1Text: "I define application, size, specification and budget, research suitable options and prepare a useful shortlist.", service2Title: "Professional sales support", service2Text: "I organise the relevant equipment data, support market positioning and coordinate serious buyer enquiries.", service3Title: "Assess offers and condition", service3Text: "I help assess price, specification, operating hours, documentation and the overall technical picture.", service4Title: "Coordinate the transaction", service4Text: "If required, I support communication, negotiation, transport, documents, handover and spare-parts enquiries.",
+        clientsEyebrow: "Your starting point", clientsTitle: "Clear support on both sides.", clientsLead: "I focus on the concrete objective: finding the right machine or selling an existing one effectively.", buyerLabel: "For buyers", buyerTitle: "The right machine—not just another offer.", buyer1: "Define requirements and budget clearly", buyer2: "Identify and compare suitable offers", buyer3: "Assess technical and commercial aspects", buyer4: "Guide the decision and handover in a structured way", sellerLabel: "For sellers", sellerTitle: "Position the machine clearly in the market.", seller1: "Record data, specification and condition", seller2: "Prepare realistic market positioning", seller3: "Coordinate prospects and questions", seller4: "Support negotiation and handling",
+        processEyebrow: "How I work", processTitle: "A clear process. Direct communication.", processLead: "You always know where the project stands and what happens next.", step1Title: "Starting point", step1Text: "We define the objective, requirements, timeframe and budget.", step2Title: "Options", step2Text: "I research, filter and compare suitable routes.", step3Title: "Decision", step3Text: "We review the key facts and agree on the way forward.", step4Title: "Handling", step4Text: "I support the agreed steps through to handover.",
+        aboutEyebrow: "Personal support", aboutRole: "ML Consulting · South Tyrol", aboutLead: "I combine technical understanding with experience in construction equipment sales. This allows me to assess practical requirements quickly and guide projects with focus.", aboutText: "My standard is clear, reliable cooperation: direct availability, transparent communication and a solution that fits the real application.", aboutPoint1Title: "Practical", aboutPoint1Text: "Technical requirements explained clearly", aboutPoint2Title: "Personal", aboutPoint2Text: "One direct contact throughout the process", aboutPoint3Title: "Structured", aboutPoint3Text: "Clear steps from enquiry to handover",
+        contactEyebrow: "Next step", contactTitle: "Tell me briefly which machine you are looking for or want to sell.", contactText: "Ideally include equipment type, manufacturer and model, year, operating hours, location and your preferred timeframe.", contactButton: "Send enquiry →", footerRegion: "Construction equipment brokerage & consulting · South Tyrol"
+      },
+      ES: {
+        metaTitle: "ML Consulting | Intermediación y asesoramiento de maquinaria", metaDescription: "ML Consulting acompaña la búsqueda, valoración, intermediación y gestión de maquinaria de construcción en Tirol del Sur y alrededores.",
+        navServices: "Servicios", navClients: "Para compradores y vendedores", navProcess: "Proceso", navAbout: "Sobre mí", navContact: "Contacto",
+        heroEyebrow: "Intermediación y asesoramiento de maquinaria", heroTitle: "Conecto <span class=\"orange\">máquinas, personas</span> y procesos.", heroLead: "¿Busca la máquina adecuada, quiere vender una o necesita ayuda con la valoración y la gestión? Le acompaño personalmente durante todo el proceso con un enfoque práctico.", heroContact: "Hablemos del proyecto →", heroMore: "Qué puedo hacer",
+        visualTitle: "Un único contacto", visualText: "Desde la primera consulta hasta la entrega", tick1: "Definir necesidades", tick2: "Buscar la máquina", tick3: "Valorar la oferta", tick4: "Acompañar la negociación", tick5: "Coordinar la gestión",
+        servicesEyebrow: "Qué hago", servicesTitle: "Gestiono el trabajo entre la necesidad y la entrega.", servicesLead: "No soy una plataforma anónima ni un catálogo: usted explica su objetivo, yo organizo los siguientes pasos y mantengo el proceso en marcha.",
+        service1Title: "Búsqueda dirigida de maquinaria", service1Text: "Defino aplicación, tamaño, equipamiento y presupuesto, busco opciones adecuadas y preparo una selección útil.", service2Title: "Apoyo profesional en la venta", service2Text: "Organizo los datos relevantes de la máquina, apoyo su posicionamiento y coordino consultas serias de compradores.", service3Title: "Valorar ofertas y estado", service3Text: "Ayudo a valorar precio, equipamiento, horas, documentación y el estado técnico general.", service4Title: "Coordinar la operación", service4Text: "Si lo desea, acompaño comunicación, negociación, transporte, documentos, entrega y consultas de repuestos.",
+        clientsEyebrow: "Su punto de partida", clientsTitle: "Apoyo claro para ambas partes.", clientsLead: "Me centro en el objetivo concreto: encontrar la máquina adecuada o vender de forma eficaz la disponible.", buyerLabel: "Para compradores", buyerTitle: "La máquina adecuada, no cualquier oferta.", buyer1: "Definir claramente requisitos y presupuesto", buyer2: "Identificar y comparar ofertas adecuadas", buyer3: "Valorar aspectos técnicos y comerciales", buyer4: "Acompañar decisión y entrega de forma estructurada", sellerLabel: "Para vendedores", sellerTitle: "Posicionar la máquina con claridad en el mercado.", seller1: "Recopilar datos, equipamiento y estado", seller2: "Preparar un posicionamiento realista", seller3: "Coordinar interesados y consultas", seller4: "Acompañar negociación y gestión",
+        processEyebrow: "Cómo trabajo", processTitle: "Un proceso claro. Comunicación directa.", processLead: "Siempre sabe en qué punto está el proyecto y cuál es el siguiente paso.", step1Title: "Punto de partida", step1Text: "Definimos objetivo, requisitos, plazo y presupuesto.", step2Title: "Opciones", step2Text: "Busco, filtro y comparo las alternativas adecuadas.", step3Title: "Decisión", step3Text: "Revisamos los datos clave y acordamos cómo proceder.", step4Title: "Gestión", step4Text: "Acompaño los pasos acordados hasta la entrega.",
+        aboutEyebrow: "Atención personal", aboutRole: "ML Consulting · Tirol del Sur", aboutLead: "Combino conocimientos técnicos con experiencia en la venta de maquinaria de construcción. Así puedo entender rápidamente las necesidades prácticas y acompañar cada proyecto con precisión.", aboutText: "Mi objetivo es una colaboración clara y fiable: contacto directo, comunicación transparente y una solución adaptada al uso real.", aboutPoint1Title: "Práctico", aboutPoint1Text: "Requisitos técnicos explicados con claridad", aboutPoint2Title: "Personal", aboutPoint2Text: "Un contacto directo durante todo el proceso", aboutPoint3Title: "Estructurado", aboutPoint3Text: "Pasos claros desde la consulta hasta la entrega",
+        contactEyebrow: "Siguiente paso", contactTitle: "Cuénteme brevemente qué máquina busca o quiere vender.", contactText: "Indique, si es posible, tipo de máquina, fabricante y modelo, año, horas de trabajo, ubicación y plazo deseado.", contactButton: "Enviar consulta →", footerRegion: "Intermediación y asesoramiento de maquinaria · Tirol del Sur"
+      }
+    };
+
+    const languageSelect = document.getElementById("lang");
+    const menu = document.getElementById("menu");
+    const menuToggle = document.getElementById("menuToggle");
+    const htmlKeys = new Set(["heroTitle"]);
+
+    function applyLanguage(language) {
+      const copy = translations[language] || translations.DE;
+      document.querySelectorAll("[data-k]").forEach((element) => {
+        const key = element.dataset.k;
+        if (copy[key] == null) return;
+        if (htmlKeys.has(key)) element.innerHTML = copy[key];
+        else element.textContent = copy[key];
+      });
+      document.title = copy.metaTitle;
+      document.querySelector('meta[name="description"]').setAttribute("content", copy.metaDescription);
+      document.documentElement.lang = language.toLowerCase();
+      localStorage.setItem("ml_lang", language);
+    }
+
+    function closeMenu() {
+      menu.classList.remove("open");
+      document.body.classList.remove("menu-open");
+      menuToggle.setAttribute("aria-expanded", "false");
+    }
+
+    languageSelect.value = localStorage.getItem("ml_lang") || "DE";
+    applyLanguage(languageSelect.value);
+    languageSelect.addEventListener("change", (event) => applyLanguage(event.target.value));
+    menuToggle.addEventListener("click", () => {
+      const open = menu.classList.toggle("open");
+      document.body.classList.toggle("menu-open", open);
+      menuToggle.setAttribute("aria-expanded", String(open));
+    });
+    menu.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+    window.addEventListener("resize", () => { if (window.innerWidth > 980) closeMenu(); });
+  </script>
+</body>
+</html>
