@@ -2196,3 +2196,141 @@ body { overflow-x: hidden; }
   .hero-immersive .hero-facts,
   .hero-path-art { opacity: 1; animation: none; transform: none; }
 }
+
+/* Precision Atelier — procedural 3D hero */
+.hero-immersive {
+  background:
+    radial-gradient(circle at 78% 42%, rgba(152, 125, 78, .09), transparent 29%),
+    linear-gradient(112deg, #030405 0%, #06080a 52%, #0a0c0f 100%);
+}
+
+.hero-immersive::before {
+  background:
+    linear-gradient(rgba(202, 180, 138, .028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(202, 180, 138, .028) 1px, transparent 1px);
+  background-size: 124px 124px;
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .12) 44%, #000 100%);
+}
+
+.hero-immersive .orange { color: #cdb17c; }
+
+.hero-immersive .hero-kicker { color: #c7aa76; }
+.hero-immersive .hero-kicker::before { background: #b9975d; }
+.hero-immersive .lead { color: #f3f0e9; }
+.hero-immersive .hero-description { color: #a9aaab; }
+
+.hero-immersive .hero-primary {
+  border-color: #d0b27a;
+  background: linear-gradient(135deg, #e1c795, #b58e50);
+  color: #11100d;
+  box-shadow: 0 18px 48px rgba(151, 116, 61, .2);
+}
+
+.hero-immersive .hero-primary:hover,
+.hero-immersive .hero-primary:focus-visible {
+  border-color: #ead7b1;
+  background: linear-gradient(135deg, #ead5ac, #c19a5c);
+  color: #090806;
+}
+
+.hero-immersive .hero-secondary::after { background: #b9975d; }
+
+.hero-immersive .hero-facts,
+.hero-immersive .hero-facts > span { border-color: rgba(206, 188, 154, .16); }
+.hero-immersive .hero-facts small { color: #86888a; }
+
+.hero-stage {
+  min-height: 680px;
+  border-left: 1px solid rgba(211, 190, 149, .12);
+  background: #050608;
+  transform: none;
+}
+
+.hero-stage::before {
+  z-index: 3;
+  width: 25%;
+  background: linear-gradient(90deg, #050608 0%, rgba(5, 6, 8, .72) 42%, transparent 100%);
+}
+
+.hero-stage::after {
+  z-index: 3;
+  height: 30%;
+  background: linear-gradient(0deg, rgba(4, 5, 7, .9), transparent);
+}
+
+.hero-stage .hero-canvas {
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: none;
+  opacity: 1;
+  transform: none;
+  transform-origin: center;
+  animation: precisionCanvasReveal 1.35s .08s cubic-bezier(.2, .75, .2, 1) both;
+  cursor: default;
+}
+
+.stage-chapter span { color: rgba(214, 198, 168, .57); }
+.stage-chapter strong { color: #f1eadc; }
+.stage-chapter small { color: #8d806d; }
+
+.hero-immersive .stage-point {
+  border-color: rgba(214, 195, 158, .17);
+  border-left-color: #c7a666;
+  background: rgba(8, 9, 11, .75);
+  box-shadow: 0 24px 58px rgba(0, 0, 0, .42);
+}
+
+.hero-immersive .stage-point span {
+  background: rgba(192, 158, 94, .11);
+  color: #d8ba82;
+}
+
+.hero-immersive .stage-point.is-active {
+  border-color: rgba(218, 193, 145, .34);
+  border-left-color: #e0c28a;
+  background: rgba(22, 20, 17, .84);
+  box-shadow: 0 26px 66px rgba(0, 0, 0, .48), 0 0 44px rgba(176, 135, 69, .09);
+}
+
+.hero-immersive .stage-point.is-active span {
+  background: linear-gradient(135deg, #e1c795, #aa8145);
+  color: #11100d;
+}
+
+.hero-immersive .stage-status { border-color: rgba(210, 189, 149, .18); }
+.hero-immersive .stage-status-dot {
+  background: #d1ad6c;
+  box-shadow: 0 0 18px rgba(209, 173, 108, .52);
+}
+.hero-immersive .stage-status small { color: #8e8069; }
+.hero-immersive .stage-status strong { color: #ded8cc; }
+.hero-immersive .stage-status::after {
+  background: linear-gradient(90deg, #9f7841, #e0c792);
+  box-shadow: 0 0 18px rgba(197, 159, 93, .35);
+}
+
+.hero-immersive .scroll-cue span::after { background: #c3a267; }
+
+@keyframes precisionCanvasReveal {
+  from { opacity: 0; transform: translateY(18px) scale(1.045); filter: blur(9px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@media (max-width: 940px) {
+  .hero-stage { border-top: 1px solid rgba(211, 190, 149, .1); border-left: 0; }
+  .hero-stage::before { width: 13%; background: linear-gradient(90deg, #050608, transparent); }
+}
+
+@media (max-width: 700px) {
+  .hero-immersive::before { background-size: 86px 86px; }
+  .hero-stage { min-height: 540px; }
+  .hero-stage::before { width: 7%; }
+  .stage-chapter { top: 25px; }
+  .hero-immersive .stage-point { background: rgba(8, 9, 11, .82); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stage .hero-canvas { animation: none; }
+}
