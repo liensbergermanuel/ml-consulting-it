@@ -1353,25 +1353,33 @@ body { overflow-x: hidden; }
 .stage-ring-one { width: 440px; height: 440px; }
 .stage-ring-two { width: 580px; height: 580px; opacity: .55; }
 
-.hero-machine {
+.hero-canvas {
   position: absolute;
   z-index: 2;
-  right: -18%;
-  bottom: 72px;
-  width: 128%;
-  max-width: none;
-  object-fit: contain;
-  filter: drop-shadow(0 45px 55px rgba(0, 5, 12, .52));
-  transform: translate3d(0, 0, 46px) scale(1.02);
-  transform-origin: 55% 65%;
-  transition: transform .24s ease-out, filter .3s ease;
-  pointer-events: none;
+  inset: -2% -11% 5% -6%;
+  width: 117%;
+  height: 97%;
+  filter: drop-shadow(0 44px 54px rgba(0, 6, 15, .55));
+  cursor: grab;
+  touch-action: pan-y;
   user-select: none;
 }
 
-.hero-stage:hover .hero-machine {
-  filter: drop-shadow(0 52px 70px rgba(0, 5, 12, .6));
-  transform: translate3d(0, -5px, 60px) scale(1.035);
+.hero-canvas:active { cursor: grabbing; }
+
+.hero-stage.webgl-fallback::after {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 53%;
+  width: 280px;
+  height: 280px;
+  border: 1px solid rgba(104, 154, 255, .48);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, rgba(99, 156, 255, .44), rgba(32, 91, 208, .08) 42%, transparent 68%);
+  box-shadow: 0 0 90px rgba(42, 102, 230, .25), inset 0 0 55px rgba(92, 145, 255, .16);
+  content: "";
+  transform: translate(-50%, -50%);
 }
 
 .stage-point {
@@ -1659,7 +1667,7 @@ body { overflow-x: hidden; }
 @media (max-width: 1120px) {
   .hero-immersive .hero-grid { grid-template-columns: minmax(390px, .9fr) minmax(480px, 1.1fr); }
   .hero-stage { min-height: 590px; }
-  .hero-machine { right: -22%; width: 138%; }
+  .hero-canvas { right: -16%; width: 122%; }
   .stage-point-two, .stage-point-four { right: -1%; }
   .service-overview { gap: 52px; }
 }
@@ -1674,7 +1682,7 @@ body { overflow-x: hidden; }
   .hero-immersive .hero-copy { min-height: auto; padding: 86px 0 34px; }
   .hero-immersive h1 { max-width: 720px; }
   .hero-stage { min-height: 560px; }
-  .hero-machine { right: -10%; bottom: 64px; width: 118%; }
+  .hero-canvas { inset: -4% -7% 2% -7%; width: 114%; height: 102%; }
   .stage-point-one { left: 4%; }
   .stage-point-two { right: 3%; }
   .stage-point-three { left: 2%; }
@@ -1720,8 +1728,7 @@ body { overflow-x: hidden; }
     transform: none;
   }
   .stage-grid { inset: 1% -20% 28% -5%; }
-  .hero-machine { top: 0; right: -22%; bottom: auto; width: 145%; }
-  .hero-stage:hover .hero-machine { transform: translate3d(0, 0, 46px) scale(1.02); }
+  .hero-canvas { top: -3%; right: -18%; bottom: auto; left: -18%; width: 136%; height: 74%; }
   .stage-ring-one { width: 280px; height: 280px; }
   .stage-ring-two { width: 370px; height: 370px; }
   .stage-ring { top: 34%; left: 55%; }
@@ -1799,7 +1806,7 @@ body { overflow-x: hidden; }
   .scroll-cue span::after { animation: none; }
 
   .hero-stage,
-  .hero-machine,
+  .hero-canvas,
   .reveal { transition: none; }
 
   .reveal { opacity: 1; transform: none; }

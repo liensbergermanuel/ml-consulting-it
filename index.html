@@ -314,7 +314,7 @@
       .system-step { grid-template-columns: 34px 1fr auto; }
     }
   </style>
-  <link rel="stylesheet" href="/refresh.css?v=20260903-5">
+  <link rel="stylesheet" href="/refresh.css?v=20260903-6">
 </head>
 <body>
   <header class="topbar">
@@ -366,7 +366,7 @@
           <div class="stage-grid" aria-hidden="true"></div>
           <div class="stage-ring stage-ring-one" aria-hidden="true"></div>
           <div class="stage-ring stage-ring-two" aria-hidden="true"></div>
-          <img class="hero-machine" src="/hero-3d-v1.webp" data-alt-k="heroAlt" alt="3D-Visualisierung einer präzisen Baumaschinenentscheidung">
+          <canvas id="heroCanvas" class="hero-canvas" aria-hidden="true"></canvas>
           <div class="stage-point stage-point-one"><span>01</span><strong data-k="panelAction">Projekt besprechen</strong></div>
           <div class="stage-point stage-point-two"><span>02</span><strong data-k="panelSearch">Gezielte Suche</strong></div>
           <div class="stage-point stage-point-three"><span>03</span><strong data-k="panelReview">Fundierte Bewertung</strong></div>
@@ -766,5 +766,6 @@
       window.location.href = `mailto:ml.consulting@outlook.it?subject=${subject}&body=${body}`;
     });
   </script>
+  <script src="/hero-3d.js?v=20260903-1"></script>
 </body>
 </html>
