@@ -2,6 +2,9 @@
   const canvas = document.getElementById("heroCanvas");
   const stage = document.getElementById("heroStage");
   if (!canvas || !stage) return;
+  const hero = stage.closest(".hero-immersive");
+  const heroCopy = hero?.querySelector(".hero-copy");
+  const stagePoints = [...stage.querySelectorAll(".stage-point")];
 
   const gl = canvas.getContext("webgl", {
     alpha: true,
@@ -188,7 +191,29 @@
   let visible = true;
   let lastFrame = 0;
   let elapsed = 0;
+  let scrollProgress = 0;
+  let targetScrollProgress = 0;
+  let activeStage = -1;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const updateScrollProgress = () => {
+    if (!hero) return;
+    const sectionTop = window.scrollY + hero.getBoundingClientRect().top;
+    const copyOffset = window.innerWidth <= 940 ? (heroCopy?.offsetHeight || 0) : 0;
+    const start = sectionTop + copyOffset;
+    const end = sectionTop + hero.offsetHeight - window.innerHeight;
+    targetScrollProgress = Math.max(0, Math.min(1, (window.scrollY - start) / Math.max(end - start, 1)));
+  };
+
+  const updateStage = (progress) => {
+    const nextStage = Math.min(stagePoints.length - 1, Math.floor(progress * stagePoints.length));
+    if (nextStage !== activeStage) {
+      stagePoints.forEach((point, index) => point.classList.toggle("is-active", index === nextStage));
+      activeStage = nextStage;
+      if (hero) hero.dataset.phase = String(nextStage);
+    }
+    hero?.style.setProperty("--hero-scroll", `${(progress * 100).toFixed(2)}%`);
+  };
 
   const resize = () => {
     const ratio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.35 : 1.8);
@@ -219,42 +244,44 @@
     if (!reducedMotion) elapsed += delta;
     pointerX += (targetX - pointerX) * .055;
     pointerY += (targetY - pointerY) * .055;
+    scrollProgress += (targetScrollProgress - scrollProgress) * .075;
+    updateStage(scrollProgress);
 
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     const compact = window.innerWidth < 700;
-    const sceneX = compact ? .25 : .38;
-    const sceneY = compact ? .62 : .05;
-    const sceneZ = compact ? -6.25 : -6.0;
-    const scrollRotation = Math.min(window.scrollY / Math.max(window.innerHeight, 1), 1.2) * .42;
+    const arc = Math.sin(scrollProgress * Math.PI);
+    const sceneX = (compact ? .25 : .38) + Math.sin(scrollProgress * Math.PI * 2) * .22;
+    const sceneY = (compact ? .62 : .05) + Math.cos(scrollProgress * Math.PI * 2) * .1;
+    const sceneZ = (compact ? -6.25 : -6.0) + arc * .68;
     const base = compose(
       translation(sceneX, sceneY, sceneZ),
-      rotateX(-.13 + pointerY * .38),
-      rotateY(elapsed * .22 + pointerX * .62 + scrollRotation),
-      rotateZ(-.08)
+      rotateX(-.13 + pointerY * .38 + scrollProgress * .92),
+      rotateY(elapsed * .08 + pointerX * .62 + scrollProgress * Math.PI * 2.65),
+      rotateZ(-.08 + scrollProgress * .46)
     );
 
     gl.depthMask(false);
-    draw(meshes.dust, gl.POINTS, compose(translation(0, 0, -7.2), rotateY(elapsed * .025)), [.28, .52, 1, .34], compact ? 2.2 : 2.7);
+    draw(meshes.dust, gl.POINTS, compose(translation(0, 0, -7.2), rotateY(elapsed * .025 + scrollProgress * .8)), [.28, .52, 1, .34], compact ? 2.2 : 2.7);
     gl.depthMask(true);
 
-    const pulse = 1 + Math.sin(elapsed * 1.35) * .035;
+    const pulse = 1 + Math.sin(elapsed * 1.35) * .035 + arc * .22 + scrollProgress * .12;
     gl.depthMask(false);
     draw(meshes.coreTriangles, gl.TRIANGLES, compose(base, rotateX(elapsed * .24), rotateY(elapsed * .34), scale(1.22 * pulse)), [.12, .39, 1, .13]);
     gl.depthMask(true);
     draw(meshes.coreEdges, gl.LINES, compose(base, rotateX(elapsed * .24), rotateY(elapsed * .34), scale(1.23 * pulse)), [.42, .67, 1, .78]);
 
     gl.depthMask(false);
-    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateX(1.1), rotateZ(elapsed * .18), scale(1.92, 1.92, 1)), [.22, .53, 1, .54]);
-    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateY(1.15), rotateZ(-elapsed * .14), scale(2.18, 2.18, 1)), [.32, .64, 1, .37]);
-    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateX(.48), rotateY(.8), rotateZ(elapsed * .1), scale(2.52, 2.52, 1)), [.25, .46, .84, .22]);
-    draw(meshes.cube, gl.LINES, compose(base, rotateX(-elapsed * .11), rotateY(elapsed * .16), scale(1.72)), [.3, .56, 1, .22]);
+    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateX(1.1 + scrollProgress * .7), rotateZ(elapsed * .12 + scrollProgress * 1.8), scale(1.92 + scrollProgress * .58)), [.22, .53, 1, .54]);
+    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateY(1.15 + scrollProgress), rotateZ(-elapsed * .1 - scrollProgress * 1.4), scale(2.18 + arc * .82)), [.32, .64, 1, .37]);
+    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateX(.48 + scrollProgress * .9), rotateY(.8), rotateZ(elapsed * .07 + scrollProgress * 2.1), scale(2.52 - scrollProgress * .28)), [.25, .46, .84, .22]);
+    draw(meshes.cube, gl.LINES, compose(base, rotateX(-elapsed * .08 - scrollProgress * 1.1), rotateY(elapsed * .11 + scrollProgress * 1.7), scale(1.72 + scrollProgress * .48)), [.3, .56, 1, .22]);
 
     const nodes = [];
     for (let i = 0; i < 8; i += 1) {
-      const angle = elapsed * (.22 + i * .008) + i * Math.PI / 4;
-      const radius = i % 2 ? 2.14 : 1.9;
+      const angle = elapsed * (.16 + i * .006) + scrollProgress * Math.PI * (1.8 + i * .04) + i * Math.PI / 4;
+      const radius = (i % 2 ? 2.14 : 1.9) + scrollProgress * .62;
       nodes.push(Math.cos(angle) * radius, Math.sin(angle) * radius * .72, Math.sin(angle * 1.7) * .55);
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, meshes.nodes.buffer);
@@ -285,6 +312,9 @@
   }, { rootMargin: "100px" });
   observer.observe(stage);
   window.addEventListener("resize", resize, { passive: true });
+  window.addEventListener("scroll", updateScrollProgress, { passive: true });
+  updateScrollProgress();
+  updateStage(0);
   resize();
   requestAnimationFrame(render);
 })();

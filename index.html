@@ -314,7 +314,7 @@
       .system-step { grid-template-columns: 34px 1fr auto; }
     }
   </style>
-  <link rel="stylesheet" href="/refresh.css?v=20260903-6">
+  <link rel="stylesheet" href="/refresh.css?v=20260904-1">
 </head>
 <body>
   <header class="topbar">
@@ -705,28 +705,23 @@
     updateTopbar();
     window.addEventListener("scroll", updateTopbar, { passive: true });
 
-    if (heroStage && !prefersReducedMotion.matches) {
-      heroStage.addEventListener("pointermove", (event) => {
-        if (event.pointerType === "touch") return;
-        const bounds = heroStage.getBoundingClientRect();
-        const x = (event.clientX - bounds.left) / bounds.width - .5;
-        const y = (event.clientY - bounds.top) / bounds.height - .5;
-        heroStage.style.setProperty("--stage-rx", `${y * -4}deg`);
-        heroStage.style.setProperty("--stage-ry", `${x * 6}deg`);
-      });
-      heroStage.addEventListener("pointerleave", () => {
-        heroStage.style.setProperty("--stage-rx", "0deg");
-        heroStage.style.setProperty("--stage-ry", "0deg");
-      });
-
+    if (heroStage) {
       const stagePoints = [...heroStage.querySelectorAll(".stage-point")];
-      let activePoint = 0;
-      stagePoints[activePoint]?.classList.add("is-active");
-      window.setInterval(() => {
-        stagePoints[activePoint]?.classList.remove("is-active");
-        activePoint = (activePoint + 1) % stagePoints.length;
-        stagePoints[activePoint]?.classList.add("is-active");
-      }, 1800);
+      stagePoints[0]?.classList.add("is-active");
+      if (!prefersReducedMotion.matches) {
+        heroStage.addEventListener("pointermove", (event) => {
+          if (event.pointerType === "touch") return;
+          const bounds = heroStage.getBoundingClientRect();
+          const x = (event.clientX - bounds.left) / bounds.width - .5;
+          const y = (event.clientY - bounds.top) / bounds.height - .5;
+          heroStage.style.setProperty("--stage-rx", `${y * -4}deg`);
+          heroStage.style.setProperty("--stage-ry", `${x * 6}deg`);
+        });
+        heroStage.addEventListener("pointerleave", () => {
+          heroStage.style.setProperty("--stage-rx", "0deg");
+          heroStage.style.setProperty("--stage-ry", "0deg");
+        });
+      }
     }
 
     const revealElements = document.querySelectorAll(".service-card, .proof-item, .step, .about-name, .about-copy, .contact-grid");
@@ -766,6 +761,6 @@
       window.location.href = `mailto:ml.consulting@outlook.it?subject=${subject}&body=${body}`;
     });
   </script>
-  <script src="/hero-3d.js?v=20260903-1"></script>
+  <script src="/hero-3d.js?v=20260904-1"></script>
 </body>
 </html>
