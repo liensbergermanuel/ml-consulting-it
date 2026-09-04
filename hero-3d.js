@@ -2,127 +2,25 @@
   const canvas = document.getElementById("heroCanvas");
   const stage = document.getElementById("heroStage");
   if (!canvas || !stage) return;
+
+  const context = canvas.getContext("2d", { alpha: true });
+  if (!context) {
+    stage.classList.add("webgl-fallback");
+    return;
+  }
+
   const hero = stage.closest(".hero-immersive");
   const heroCopy = hero?.querySelector(".hero-copy");
   const stagePoints = [...stage.querySelectorAll(".stage-point")];
-
-  const gl = canvas.getContext("webgl", {
-    alpha: true,
-    antialias: true,
-    depth: true,
-    powerPreference: "high-performance",
-    premultipliedAlpha: false
-  });
-  if (!gl) {
-    stage.classList.add("webgl-fallback");
-    return;
-  }
-
-  const vertexSource = `
-    attribute vec3 aPosition;
-    uniform mat4 uMvp;
-    uniform float uPointSize;
-    varying float vDepth;
-    void main() {
-      vec4 projected = uMvp * vec4(aPosition, 1.0);
-      gl_Position = projected;
-      gl_PointSize = uPointSize;
-      vDepth = clamp(1.2 - abs(projected.z / projected.w) * 0.38, 0.5, 1.0);
-    }
-  `;
-  const fragmentSource = `
-    precision mediump float;
-    uniform vec4 uColor;
-    uniform float uIsPoint;
-    varying float vDepth;
-    void main() {
-      float alpha = uColor.a * vDepth;
-      if (uIsPoint > 0.5) {
-        vec2 center = gl_PointCoord - vec2(0.5);
-        float distanceFromCenter = length(center);
-        if (distanceFromCenter > 0.5) discard;
-        alpha *= smoothstep(0.5, 0.08, distanceFromCenter);
-      }
-      gl_FragColor = vec4(uColor.rgb, alpha);
-    }
-  `;
-
-  const compile = (type, source) => {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader));
-    }
-    return shader;
-  };
-
-  let program;
-  try {
-    program = gl.createProgram();
-    gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
-    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-  } catch (error) {
-    stage.classList.add("webgl-fallback");
-    return;
-  }
-
-  const positionLocation = gl.getAttribLocation(program, "aPosition");
-  const mvpLocation = gl.getUniformLocation(program, "uMvp");
-  const colorLocation = gl.getUniformLocation(program, "uColor");
-  const pointSizeLocation = gl.getUniformLocation(program, "uPointSize");
-  const isPointLocation = gl.getUniformLocation(program, "uIsPoint");
-
-  const identity = () => new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-  const multiply = (a, b) => {
-    const out = new Float32Array(16);
-    for (let column = 0; column < 4; column += 1) {
-      for (let row = 0; row < 4; row += 1) {
-        let value = 0;
-        for (let k = 0; k < 4; k += 1) value += a[k * 4 + row] * b[column * 4 + k];
-        out[column * 4 + row] = value;
-      }
-    }
-    return out;
-  };
-  const compose = (...matrices) => matrices.reduce((result, matrix) => multiply(result, matrix), identity());
-  const translation = (x, y, z) => new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, x, y, z, 1]);
-  const scale = (x, y = x, z = x) => new Float32Array([x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1]);
-  const rotateX = (angle) => {
-    const c = Math.cos(angle), s = Math.sin(angle);
-    return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]);
-  };
-  const rotateY = (angle) => {
-    const c = Math.cos(angle), s = Math.sin(angle);
-    return new Float32Array([c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]);
-  };
-  const rotateZ = (angle) => {
-    const c = Math.cos(angle), s = Math.sin(angle);
-    return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-  };
-  const perspective = (fieldOfView, aspect, near, far) => {
-    const f = 1 / Math.tan(fieldOfView / 2);
-    const nf = 1 / (near - far);
-    return new Float32Array([f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * nf, -1, 0, 0, 2 * far * near * nf, 0]);
-  };
-
-  const makeBuffer = (values, usage = gl.STATIC_DRAW) => {
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), usage);
-    return { buffer, count: values.length / 3 };
-  };
-
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const phi = (1 + Math.sqrt(5)) / 2;
-  const rawVertices = [
+  const vertices = [
     [-1, phi, 0], [1, phi, 0], [-1, -phi, 0], [1, -phi, 0],
     [0, -1, phi], [0, 1, phi], [0, -1, -phi], [0, 1, -phi],
     [phi, 0, -1], [phi, 0, 1], [-phi, 0, -1], [-phi, 0, 1]
   ].map(([x, y, z]) => {
     const length = Math.hypot(x, y, z);
-    return [x / length, y / length, z / length];
+    return { x: x / length, y: y / length, z: z / length };
   });
   const faces = [
     [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
@@ -130,184 +28,271 @@
     [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
     [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]
   ];
-  const coreTriangles = [];
-  const edgeSet = new Set();
-  const coreEdges = [];
+  const edgeKeys = new Set();
+  const edges = [];
   faces.forEach((face) => {
-    face.forEach((index) => coreTriangles.push(...rawVertices[index]));
-    for (let i = 0; i < 3; i += 1) {
-      const a = face[i], b = face[(i + 1) % 3];
+    for (let index = 0; index < 3; index += 1) {
+      const a = face[index];
+      const b = face[(index + 1) % 3];
       const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-      if (edgeSet.has(key)) continue;
-      edgeSet.add(key);
-      coreEdges.push(...rawVertices[a], ...rawVertices[b]);
+      if (!edgeKeys.has(key)) {
+        edgeKeys.add(key);
+        edges.push([a, b]);
+      }
     }
   });
 
-  const circleValues = [];
-  const circleSegments = 128;
-  for (let i = 0; i < circleSegments; i += 1) {
-    const angle = i / circleSegments * Math.PI * 2;
-    circleValues.push(Math.cos(angle), Math.sin(angle), 0);
-  }
-  const cubeVertices = [
-    [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
-    [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+  const cube = [
+    { x: -1, y: -1, z: -1 }, { x: 1, y: -1, z: -1 },
+    { x: 1, y: 1, z: -1 }, { x: -1, y: 1, z: -1 },
+    { x: -1, y: -1, z: 1 }, { x: 1, y: -1, z: 1 },
+    { x: 1, y: 1, z: 1 }, { x: -1, y: 1, z: 1 }
   ];
-  const cubePairs = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-  const cubeLines = cubePairs.flatMap(([a, b]) => [...cubeVertices[a], ...cubeVertices[b]]);
+  const cubeEdges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
 
-  let randomSeed = 9241;
+  let seed = 9327;
   const random = () => {
-    randomSeed = (randomSeed * 16807) % 2147483647;
-    return (randomSeed - 1) / 2147483646;
+    seed = seed * 16807 % 2147483647;
+    return (seed - 1) / 2147483646;
   };
-  const dustValues = [];
-  for (let i = 0; i < 110; i += 1) {
-    dustValues.push((random() - .5) * 7.4, (random() - .5) * 5.1, (random() - .5) * 3.4);
-  }
+  const dust = Array.from({ length: 90 }, () => ({
+    x: (random() - .5) * 8,
+    y: (random() - .5) * 5.4,
+    z: (random() - .5) * 4,
+    size: .45 + random() * 1.15
+  }));
 
-  const meshes = {
-    coreTriangles: makeBuffer(coreTriangles),
-    coreEdges: makeBuffer(coreEdges),
-    circle: makeBuffer(circleValues),
-    cube: makeBuffer(cubeLines),
-    dust: makeBuffer(dustValues),
-    nodes: makeBuffer(new Array(24).fill(0), gl.DYNAMIC_DRAW)
-  };
-
-  gl.useProgram(program);
-  gl.enableVertexAttribArray(positionLocation);
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  gl.enable(gl.DEPTH_TEST);
-  gl.depthFunc(gl.LEQUAL);
-
-  let projection = identity();
+  let width = 1;
+  let height = 1;
+  let pixelRatio = 1;
   let pointerX = 0;
   let pointerY = 0;
   let targetX = 0;
   let targetY = 0;
-  let visible = true;
-  let lastFrame = 0;
-  let elapsed = 0;
   let scrollProgress = 0;
   let targetScrollProgress = 0;
   let activeStage = -1;
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let lastFrame = 0;
+  let elapsed = 0;
+  let visible = true;
+
+  const resize = () => {
+    pixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.35 : 1.8);
+    width = Math.max(1, canvas.clientWidth);
+    height = Math.max(1, canvas.clientHeight);
+    const targetWidth = Math.round(width * pixelRatio);
+    const targetHeight = Math.round(height * pixelRatio);
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+    }
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  };
+
+  const rotate = (point, rotationX, rotationY, rotationZ) => {
+    let { x, y, z } = point;
+    const cx = Math.cos(rotationX), sx = Math.sin(rotationX);
+    const cy = Math.cos(rotationY), sy = Math.sin(rotationY);
+    const cz = Math.cos(rotationZ), sz = Math.sin(rotationZ);
+    const y1 = y * cx - z * sx;
+    const z1 = y * sx + z * cx;
+    const x2 = x * cy + z1 * sy;
+    const z2 = -x * sy + z1 * cy;
+    return { x: x2 * cz - y1 * sz, y: x2 * sz + y1 * cz, z: z2 };
+  };
+
+  const transform = (point, options) => {
+    const scaled = {
+      x: point.x * (options.scaleX ?? options.scale ?? 1),
+      y: point.y * (options.scaleY ?? options.scale ?? 1),
+      z: point.z * (options.scaleZ ?? options.scale ?? 1)
+    };
+    const local = rotate(scaled, options.localX || 0, options.localY || 0, options.localZ || 0);
+    const world = rotate(local, options.rotationX, options.rotationY, options.rotationZ);
+    return { x: world.x + options.x, y: world.y + options.y, z: world.z };
+  };
+
+  const project = (point, camera, zoom, centerX, centerY) => {
+    const depth = Math.max(1.2, camera - point.z);
+    const perspective = camera / depth;
+    return {
+      x: centerX + point.x * zoom * perspective,
+      y: centerY - point.y * zoom * perspective,
+      depth,
+      scale: perspective
+    };
+  };
 
   const updateScrollProgress = () => {
     if (!hero) return;
-    const sectionTop = window.scrollY + hero.getBoundingClientRect().top;
+    const heroTop = window.scrollY + hero.getBoundingClientRect().top;
     const copyOffset = window.innerWidth <= 940 ? (heroCopy?.offsetHeight || 0) : 0;
-    const start = sectionTop + copyOffset;
-    const end = sectionTop + hero.offsetHeight - window.innerHeight;
+    const start = heroTop + copyOffset;
+    const end = heroTop + hero.offsetHeight - window.innerHeight;
     targetScrollProgress = Math.max(0, Math.min(1, (window.scrollY - start) / Math.max(end - start, 1)));
   };
 
   const updateStage = (progress) => {
-    const nextStage = Math.min(stagePoints.length - 1, Math.floor(progress * stagePoints.length));
-    if (nextStage !== activeStage) {
-      stagePoints.forEach((point, index) => point.classList.toggle("is-active", index === nextStage));
-      activeStage = nextStage;
-      if (hero) hero.dataset.phase = String(nextStage);
+    const index = Math.min(stagePoints.length - 1, Math.floor(progress * stagePoints.length));
+    if (index !== activeStage) {
+      stagePoints.forEach((point, pointIndex) => point.classList.toggle("is-active", pointIndex === index));
+      activeStage = index;
+      if (hero) hero.dataset.phase = String(index);
     }
     hero?.style.setProperty("--hero-scroll", `${(progress * 100).toFixed(2)}%`);
   };
 
-  const resize = () => {
-    const ratio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.35 : 1.8);
-    const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
-    const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
+  const drawLineLoop = (points, color, lineWidth) => {
+    if (!points.length) return;
+    context.beginPath();
+    context.moveTo(points[0].x, points[0].y);
+    points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+    context.closePath();
+    context.strokeStyle = color;
+    context.lineWidth = lineWidth;
+    context.shadowColor = color;
+    context.shadowBlur = 7;
+    context.stroke();
+    context.shadowBlur = 0;
+  };
+
+  const drawRing = (scene, rotation, radius, color, lineWidth) => {
+    const points = [];
+    for (let index = 0; index < 112; index += 1) {
+      const angle = index / 112 * Math.PI * 2;
+      const point = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 };
+      const world = transform(point, { ...scene, localX: rotation.x, localY: rotation.y, localZ: rotation.z });
+      points.push(project(world, scene.camera, scene.zoom, scene.centerX, scene.centerY));
     }
-    gl.viewport(0, 0, width, height);
-    projection = perspective(Math.PI / 3.1, width / height, .1, 50);
+    drawLineLoop(points, color, lineWidth);
   };
 
-  const draw = (mesh, mode, model, color, pointSize = 1) => {
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.buffer);
-    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
-    gl.uniformMatrix4fv(mvpLocation, false, multiply(projection, model));
-    gl.uniform4fv(colorLocation, color);
-    gl.uniform1f(pointSizeLocation, pointSize);
-    gl.uniform1f(isPointLocation, mode === gl.POINTS ? 1 : 0);
-    gl.drawArrays(mode, 0, mesh.count);
-  };
-
-  const render = (timestamp = 0) => {
+  const draw = (timestamp = 0) => {
     resize();
     const delta = lastFrame ? Math.min((timestamp - lastFrame) / 1000, .05) : 0;
     lastFrame = timestamp;
     if (!reducedMotion) elapsed += delta;
-    pointerX += (targetX - pointerX) * .055;
-    pointerY += (targetY - pointerY) * .055;
-    scrollProgress += (targetScrollProgress - scrollProgress) * .075;
+    pointerX += (targetX - pointerX) * .06;
+    pointerY += (targetY - pointerY) * .06;
+    scrollProgress += (targetScrollProgress - scrollProgress) * .085;
     updateStage(scrollProgress);
-
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    context.clearRect(0, 0, width, height);
 
     const compact = window.innerWidth < 700;
     const arc = Math.sin(scrollProgress * Math.PI);
-    const sceneX = (compact ? .25 : .38) + Math.sin(scrollProgress * Math.PI * 2) * .22;
-    const sceneY = (compact ? .62 : .05) + Math.cos(scrollProgress * Math.PI * 2) * .1;
-    const sceneZ = (compact ? -6.25 : -6.0) + arc * .68;
-    const base = compose(
-      translation(sceneX, sceneY, sceneZ),
-      rotateX(-.13 + pointerY * .38 + scrollProgress * .92),
-      rotateY(elapsed * .08 + pointerX * .62 + scrollProgress * Math.PI * 2.65),
-      rotateZ(-.08 + scrollProgress * .46)
-    );
+    const scene = {
+      x: Math.sin(scrollProgress * Math.PI * 2) * .18,
+      y: (compact ? -.05 : 0) + Math.cos(scrollProgress * Math.PI * 2) * .08,
+      rotationX: -.12 + pointerY * .4 + scrollProgress * .9,
+      rotationY: elapsed * .07 + pointerX * .65 + scrollProgress * Math.PI * 2.7,
+      rotationZ: -.08 + scrollProgress * .42,
+      camera: 6.8 - arc * .75,
+      zoom: Math.min(width, height) * (compact ? .135 : .16),
+      centerX: width * (compact ? .54 : .55),
+      centerY: height * (compact ? .42 : .49)
+    };
 
-    gl.depthMask(false);
-    draw(meshes.dust, gl.POINTS, compose(translation(0, 0, -7.2), rotateY(elapsed * .025 + scrollProgress * .8)), [.28, .52, 1, .34], compact ? 2.2 : 2.7);
-    gl.depthMask(true);
-
-    const pulse = 1 + Math.sin(elapsed * 1.35) * .035 + arc * .22 + scrollProgress * .12;
-    gl.depthMask(false);
-    draw(meshes.coreTriangles, gl.TRIANGLES, compose(base, rotateX(elapsed * .24), rotateY(elapsed * .34), scale(1.22 * pulse)), [.12, .39, 1, .13]);
-    gl.depthMask(true);
-    draw(meshes.coreEdges, gl.LINES, compose(base, rotateX(elapsed * .24), rotateY(elapsed * .34), scale(1.23 * pulse)), [.42, .67, 1, .78]);
-
-    gl.depthMask(false);
-    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateX(1.1 + scrollProgress * .7), rotateZ(elapsed * .12 + scrollProgress * 1.8), scale(1.92 + scrollProgress * .58)), [.22, .53, 1, .54]);
-    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateY(1.15 + scrollProgress), rotateZ(-elapsed * .1 - scrollProgress * 1.4), scale(2.18 + arc * .82)), [.32, .64, 1, .37]);
-    draw(meshes.circle, gl.LINE_LOOP, compose(base, rotateX(.48 + scrollProgress * .9), rotateY(.8), rotateZ(elapsed * .07 + scrollProgress * 2.1), scale(2.52 - scrollProgress * .28)), [.25, .46, .84, .22]);
-    draw(meshes.cube, gl.LINES, compose(base, rotateX(-elapsed * .08 - scrollProgress * 1.1), rotateY(elapsed * .11 + scrollProgress * 1.7), scale(1.72 + scrollProgress * .48)), [.3, .56, 1, .22]);
-
-    const nodes = [];
-    for (let i = 0; i < 8; i += 1) {
-      const angle = elapsed * (.16 + i * .006) + scrollProgress * Math.PI * (1.8 + i * .04) + i * Math.PI / 4;
-      const radius = (i % 2 ? 2.14 : 1.9) + scrollProgress * .62;
-      nodes.push(Math.cos(angle) * radius, Math.sin(angle) * radius * .72, Math.sin(angle * 1.7) * .55);
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    const particleCount = compact ? 50 : dust.length;
+    for (let index = 0; index < particleCount; index += 1) {
+      const particle = dust[index];
+      const world = rotate(particle, 0, elapsed * .018 + scrollProgress * .7, 0);
+      const screen = project(world, 8.2, scene.zoom * .76, scene.centerX, scene.centerY);
+      const alpha = Math.max(.08, .34 - screen.depth * .025);
+      context.fillStyle = `rgba(83, 143, 255, ${alpha})`;
+      context.beginPath();
+      context.arc(screen.x, screen.y, particle.size * screen.scale, 0, Math.PI * 2);
+      context.fill();
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, meshes.nodes.buffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(nodes));
-    draw(meshes.nodes, gl.POINTS, base, [.42, .72, 1, .95], compact ? 8 : 10);
-    gl.depthMask(true);
+    const glowRadius = scene.zoom * (1.12 + arc * .2);
+    const glow = context.createRadialGradient(scene.centerX, scene.centerY, 0, scene.centerX, scene.centerY, glowRadius);
+    glow.addColorStop(0, "rgba(58, 122, 255, .22)");
+    glow.addColorStop(.45, "rgba(38, 95, 218, .08)");
+    glow.addColorStop(1, "rgba(15, 53, 120, 0)");
+    context.fillStyle = glow;
+    context.beginPath();
+    context.arc(scene.centerX, scene.centerY, glowRadius, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
 
-    if (!reducedMotion && visible) requestAnimationFrame(render);
+    const coreScale = 1.14 + arc * .22 + scrollProgress * .14 + Math.sin(elapsed * 1.25) * .025;
+    const transformed = vertices.map((point) => transform(point, { ...scene, scale: coreScale }));
+    const projected = transformed.map((point) => project(point, scene.camera, scene.zoom, scene.centerX, scene.centerY));
+    const sortedFaces = faces.map((face) => ({ face, z: face.reduce((sum, vertex) => sum + transformed[vertex].z, 0) / 3 })).sort((a, b) => a.z - b.z);
+    sortedFaces.forEach(({ face, z }) => {
+      const points = face.map((index) => projected[index]);
+      context.beginPath();
+      context.moveTo(points[0].x, points[0].y);
+      context.lineTo(points[1].x, points[1].y);
+      context.lineTo(points[2].x, points[2].y);
+      context.closePath();
+      const alpha = Math.max(.035, Math.min(.15, .055 + (z + 1.5) * .026));
+      context.fillStyle = `rgba(44, 111, 255, ${alpha})`;
+      context.fill();
+    });
+
+    context.lineWidth = compact ? 1.05 : 1.25;
+    context.strokeStyle = "rgba(119, 170, 255, .78)";
+    context.shadowColor = "rgba(62, 128, 255, .9)";
+    context.shadowBlur = 9;
+    edges.forEach(([a, b]) => {
+      context.beginPath();
+      context.moveTo(projected[a].x, projected[a].y);
+      context.lineTo(projected[b].x, projected[b].y);
+      context.stroke();
+    });
+    context.shadowBlur = 0;
+
+    drawRing(scene, { x: 1.05 + scrollProgress * .65, y: 0, z: scrollProgress * 1.7 }, 1.88 + scrollProgress * .52, "rgba(72, 137, 255, .58)", 1.15);
+    drawRing(scene, { x: 0, y: 1.1 + scrollProgress, z: -scrollProgress * 1.35 }, 2.15 + arc * .7, "rgba(93, 158, 255, .42)", 1);
+    drawRing(scene, { x: .48 + scrollProgress * .85, y: .75, z: scrollProgress * 1.9 }, 2.48 - scrollProgress * .25, "rgba(83, 131, 218, .3)", .85);
+
+    const cubeScale = 1.66 + scrollProgress * .42;
+    const projectedCube = cube.map((point) => {
+      const world = transform(point, { ...scene, scale: cubeScale, localX: -scrollProgress, localY: scrollProgress * 1.5 });
+      return project(world, scene.camera, scene.zoom, scene.centerX, scene.centerY);
+    });
+    context.strokeStyle = "rgba(80, 139, 244, .22)";
+    context.lineWidth = .8;
+    cubeEdges.forEach(([a, b]) => {
+      context.beginPath();
+      context.moveTo(projectedCube[a].x, projectedCube[a].y);
+      context.lineTo(projectedCube[b].x, projectedCube[b].y);
+      context.stroke();
+    });
+
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    for (let index = 0; index < 8; index += 1) {
+      const angle = elapsed * .14 + scrollProgress * Math.PI * (1.7 + index * .035) + index * Math.PI / 4;
+      const radius = (index % 2 ? 2.08 : 1.85) + scrollProgress * .58;
+      const point = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius * .72, z: Math.sin(angle * 1.7) * .52 };
+      const screen = project(transform(point, { ...scene, scale: 1 }), scene.camera, scene.zoom, scene.centerX, scene.centerY);
+      context.fillStyle = "rgba(100, 166, 255, .95)";
+      context.shadowColor = "rgba(64, 132, 255, .95)";
+      context.shadowBlur = 14;
+      context.beginPath();
+      context.arc(screen.x, screen.y, (compact ? 3.2 : 4.1) * screen.scale, 0, Math.PI * 2);
+      context.fill();
+    }
+    context.restore();
+
+    if (!reducedMotion && visible) requestAnimationFrame(draw);
   };
 
   stage.addEventListener("pointermove", (event) => {
     const bounds = stage.getBoundingClientRect();
-    targetX = ((event.clientX - bounds.left) / bounds.width - .5) * 1.2;
-    targetY = ((event.clientY - bounds.top) / bounds.height - .5) * -1.0;
+    targetX = ((event.clientX - bounds.left) / bounds.width - .5) * 1.15;
+    targetY = ((event.clientY - bounds.top) / bounds.height - .5) * -1;
   }, { passive: true });
-  stage.addEventListener("pointerleave", () => {
-    targetX = 0;
-    targetY = 0;
-  });
-
+  stage.addEventListener("pointerleave", () => { targetX = 0; targetY = 0; });
   const observer = new IntersectionObserver(([entry]) => {
     const wasVisible = visible;
     visible = entry.isIntersecting;
     if (visible && !wasVisible && !reducedMotion) {
       lastFrame = performance.now();
-      requestAnimationFrame(render);
+      requestAnimationFrame(draw);
     }
   }, { rootMargin: "100px" });
   observer.observe(stage);
@@ -316,5 +301,5 @@
   updateScrollProgress();
   updateStage(0);
   resize();
-  requestAnimationFrame(render);
+  requestAnimationFrame(draw);
 })();
