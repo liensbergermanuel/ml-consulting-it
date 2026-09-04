@@ -4,77 +4,52 @@
   if (!canvas || !stage) return;
 
   const context = canvas.getContext("2d", { alpha: true });
-  if (!context) {
-    stage.classList.add("webgl-fallback");
-    return;
-  }
+  if (!context) return;
 
   const hero = stage.closest(".hero-immersive");
   const heroCopy = hero?.querySelector(".hero-copy");
+  const art = stage.querySelector(".hero-path-art");
+  const chapterNumber = document.getElementById("stageChapterNumber");
   const stagePoints = [...stage.querySelectorAll(".stage-point")];
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const phi = (1 + Math.sqrt(5)) / 2;
-  const vertices = [
-    [-1, phi, 0], [1, phi, 0], [-1, -phi, 0], [1, -phi, 0],
-    [0, -1, phi], [0, 1, phi], [0, -1, -phi], [0, 1, -phi],
-    [phi, 0, -1], [phi, 0, 1], [-phi, 0, -1], [-phi, 0, 1]
-  ].map(([x, y, z]) => {
-    const length = Math.hypot(x, y, z);
-    return { x: x / length, y: y / length, z: z / length };
-  });
-  const faces = [
-    [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
-    [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
-    [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
-    [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]
-  ];
-  const edgeKeys = new Set();
-  const edges = [];
-  faces.forEach((face) => {
-    for (let index = 0; index < 3; index += 1) {
-      const a = face[index];
-      const b = face[(index + 1) % 3];
-      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-      if (!edgeKeys.has(key)) {
-        edgeKeys.add(key);
-        edges.push([a, b]);
-      }
-    }
-  });
 
-  const cube = [
-    { x: -1, y: -1, z: -1 }, { x: 1, y: -1, z: -1 },
-    { x: 1, y: 1, z: -1 }, { x: -1, y: 1, z: -1 },
-    { x: -1, y: -1, z: 1 }, { x: 1, y: -1, z: 1 },
-    { x: 1, y: 1, z: 1 }, { x: -1, y: 1, z: 1 }
+  const sourceWidth = 1672;
+  const sourceHeight = 942;
+  const path = [
+    [.87, .98], [.75, .91], [.61, .78], [.63, .66], [.77, .52],
+    [.67, .40], [.48, .34], [.44, .29], [.54, .24], [.70, .19], [.61, .11]
   ];
-  const cubeEdges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const milestones = [[.61, .73], [.67, .39], [.53, .25], [.61, .12]];
 
-  let seed = 9327;
+  let seed = 48271;
   const random = () => {
     seed = seed * 16807 % 2147483647;
     return (seed - 1) / 2147483646;
   };
-  const dust = Array.from({ length: 90 }, () => ({
-    x: (random() - .5) * 8,
-    y: (random() - .5) * 5.4,
-    z: (random() - .5) * 4,
-    size: .45 + random() * 1.15
+  const particles = Array.from({ length: 82 }, () => ({
+    x: .32 + random() * .65,
+    y: .06 + random() * .88,
+    radius: .35 + random() * 1.15,
+    speed: .16 + random() * .42,
+    phase: random() * Math.PI * 2
   }));
 
   let width = 1;
   let height = 1;
   let pixelRatio = 1;
+  let targetScroll = 0;
+  let scrollProgress = 0;
   let pointerX = 0;
   let pointerY = 0;
-  let targetX = 0;
-  let targetY = 0;
-  let scrollProgress = 0;
-  let targetScrollProgress = 0;
+  let targetPointerX = 0;
+  let targetPointerY = 0;
   let activeStage = -1;
   let lastFrame = 0;
   let elapsed = 0;
   let visible = true;
+
+  const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+  const ease = (value) => 1 - Math.pow(1 - clamp(value), 3);
 
   const resize = () => {
     pixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.35 : 1.8);
@@ -89,204 +64,170 @@
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   };
 
-  const rotate = (point, rotationX, rotationY, rotationZ) => {
-    let { x, y, z } = point;
-    const cx = Math.cos(rotationX), sx = Math.sin(rotationX);
-    const cy = Math.cos(rotationY), sy = Math.sin(rotationY);
-    const cz = Math.cos(rotationZ), sz = Math.sin(rotationZ);
-    const y1 = y * cx - z * sx;
-    const z1 = y * sx + z * cx;
-    const x2 = x * cy + z1 * sy;
-    const z2 = -x * sy + z1 * cy;
-    return { x: x2 * cz - y1 * sz, y: x2 * sz + y1 * cz, z: z2 };
-  };
-
-  const transform = (point, options) => {
-    const scaled = {
-      x: point.x * (options.scaleX ?? options.scale ?? 1),
-      y: point.y * (options.scaleY ?? options.scale ?? 1),
-      z: point.z * (options.scaleZ ?? options.scale ?? 1)
-    };
-    const local = rotate(scaled, options.localX || 0, options.localY || 0, options.localZ || 0);
-    const world = rotate(local, options.rotationX, options.rotationY, options.rotationZ);
-    return { x: world.x + options.x, y: world.y + options.y, z: world.z };
-  };
-
-  const project = (point, camera, zoom, centerX, centerY) => {
-    const depth = Math.max(1.2, camera - point.z);
-    const perspective = camera / depth;
+  const imagePoint = ([x, y]) => {
+    const coverScale = Math.max(width / sourceWidth, height / sourceHeight);
+    const renderedWidth = sourceWidth * coverScale;
+    const renderedHeight = sourceHeight * coverScale;
     return {
-      x: centerX + point.x * zoom * perspective,
-      y: centerY - point.y * zoom * perspective,
-      depth,
-      scale: perspective
+      x: (width - renderedWidth) / 2 + x * renderedWidth,
+      y: (height - renderedHeight) / 2 + y * renderedHeight
     };
   };
 
-  const updateScrollProgress = () => {
+  const pointOnPath = (progress) => {
+    const scaled = clamp(progress) * (path.length - 1);
+    const index = Math.min(path.length - 2, Math.floor(scaled));
+    const local = scaled - index;
+    const a = imagePoint(path[index]);
+    const b = imagePoint(path[index + 1]);
+    return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
+  };
+
+  const updateScrollTarget = () => {
     if (!hero) return;
     const heroTop = window.scrollY + hero.getBoundingClientRect().top;
     const copyOffset = window.innerWidth <= 940 ? (heroCopy?.offsetHeight || 0) : 0;
     const start = heroTop + copyOffset;
     const end = heroTop + hero.offsetHeight - window.innerHeight;
-    targetScrollProgress = Math.max(0, Math.min(1, (window.scrollY - start) / Math.max(end - start, 1)));
+    targetScroll = clamp((window.scrollY - start) / Math.max(end - start, 1));
+    if (reducedMotion) {
+      scrollProgress = targetScroll;
+      updateStory(scrollProgress);
+      draw(performance.now(), true);
+    }
   };
 
-  const updateStage = (progress) => {
-    const index = Math.min(stagePoints.length - 1, Math.floor(progress * stagePoints.length));
+  const updateStory = (progress) => {
+    const index = Math.min(stagePoints.length - 1, Math.floor(clamp(progress) * stagePoints.length));
     if (index !== activeStage) {
       stagePoints.forEach((point, pointIndex) => point.classList.toggle("is-active", pointIndex === index));
       activeStage = index;
       if (hero) hero.dataset.phase = String(index);
+      if (chapterNumber) chapterNumber.textContent = String(index + 1).padStart(2, "0");
     }
+
+    const cinematic = ease(progress);
+    const compact = window.innerWidth < 700;
+    const scale = 1.025 + cinematic * (compact ? .1 : .135);
+    const x = (-cinematic * (compact ? 20 : 34)) + pointerX * (compact ? 0 : 10);
+    const y = (cinematic * (compact ? 20 : 32)) + pointerY * (compact ? 0 : 8);
+    const rotation = -.45 + cinematic * 1.25 + pointerX * .3;
+    stage.style.setProperty("--path-x", `${x.toFixed(2)}px`);
+    stage.style.setProperty("--path-y", `${y.toFixed(2)}px`);
+    stage.style.setProperty("--path-scale", scale.toFixed(4));
+    stage.style.setProperty("--path-rotate", `${rotation.toFixed(3)}deg`);
     hero?.style.setProperty("--hero-scroll", `${(progress * 100).toFixed(2)}%`);
   };
 
-  const drawLineLoop = (points, color, lineWidth) => {
-    if (!points.length) return;
+  const tracePath = () => {
+    const drawTo = .16 + scrollProgress * .84;
+    const samples = 120;
+    context.save();
+    context.globalCompositeOperation = "lighter";
     context.beginPath();
-    context.moveTo(points[0].x, points[0].y);
-    points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
-    context.closePath();
-    context.strokeStyle = color;
-    context.lineWidth = lineWidth;
-    context.shadowColor = color;
-    context.shadowBlur = 7;
-    context.stroke();
-    context.shadowBlur = 0;
-  };
-
-  const drawRing = (scene, rotation, radius, color, lineWidth) => {
-    const points = [];
-    for (let index = 0; index < 112; index += 1) {
-      const angle = index / 112 * Math.PI * 2;
-      const point = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 };
-      const world = transform(point, { ...scene, localX: rotation.x, localY: rotation.y, localZ: rotation.z });
-      points.push(project(world, scene.camera, scene.zoom, scene.centerX, scene.centerY));
+    for (let index = 0; index <= samples; index += 1) {
+      const progress = index / samples * drawTo;
+      const point = pointOnPath(progress);
+      if (index === 0) context.moveTo(point.x, point.y);
+      else context.lineTo(point.x, point.y);
     }
-    drawLineLoop(points, color, lineWidth);
+    const gradient = context.createLinearGradient(width * .5, height, width * .6, 0);
+    gradient.addColorStop(0, "rgba(77, 142, 255, 0)");
+    gradient.addColorStop(.35, "rgba(87, 159, 255, .12)");
+    gradient.addColorStop(1, "rgba(173, 218, 255, .8)");
+    context.strokeStyle = gradient;
+    context.lineWidth = 1.15;
+    context.shadowColor = "rgba(82, 159, 255, .9)";
+    context.shadowBlur = 16;
+    context.stroke();
+    context.restore();
   };
 
-  const draw = (timestamp = 0) => {
+  const drawMilestones = () => {
+    milestones.forEach((sourcePoint, index) => {
+      const point = imagePoint(sourcePoint);
+      const active = index === activeStage;
+      const pulse = active ? 1 + Math.sin(elapsed * 2.1) * .09 : 1;
+      const radius = (index === 0 ? 32 : index === 1 ? 22 : 16) * pulse;
+      const gradient = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius * 2.5);
+      gradient.addColorStop(0, `rgba(224, 246, 255, ${active ? .32 : .07})`);
+      gradient.addColorStop(.26, `rgba(82, 154, 255, ${active ? .2 : .035})`);
+      gradient.addColorStop(1, "rgba(31, 103, 240, 0)");
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.arc(point.x, point.y, radius * 2.5, 0, Math.PI * 2);
+      context.fill();
+      if (active) {
+        context.strokeStyle = "rgba(184, 224, 255, .62)";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.arc(point.x, point.y, radius * (1.38 + Math.sin(elapsed * 1.7) * .12), 0, Math.PI * 2);
+        context.stroke();
+      }
+    });
+  };
+
+  const drawTracker = () => {
+    const tracker = pointOnPath(scrollProgress);
+    const glow = context.createRadialGradient(tracker.x, tracker.y, 0, tracker.x, tracker.y, 36);
+    glow.addColorStop(0, "rgba(255,255,255,.98)");
+    glow.addColorStop(.09, "rgba(150,211,255,.95)");
+    glow.addColorStop(.34, "rgba(63,139,255,.34)");
+    glow.addColorStop(1, "rgba(40,108,244,0)");
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    context.fillStyle = glow;
+    context.beginPath();
+    context.arc(tracker.x, tracker.y, 36, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  };
+
+  const drawParticles = () => {
+    context.save();
+    context.globalCompositeOperation = "lighter";
+    const amount = window.innerWidth < 700 ? 42 : particles.length;
+    for (let index = 0; index < amount; index += 1) {
+      const particle = particles[index];
+      const point = imagePoint([particle.x, particle.y]);
+      const rise = ((elapsed * particle.speed + particle.phase) % 1) * 34;
+      const alpha = .08 + (Math.sin(elapsed * .8 + particle.phase) + 1) * .055;
+      context.fillStyle = `rgba(116, 180, 255, ${alpha})`;
+      context.beginPath();
+      context.arc(point.x + Math.sin(elapsed * .35 + particle.phase) * 5, point.y - rise, particle.radius, 0, Math.PI * 2);
+      context.fill();
+    }
+    context.restore();
+  };
+
+  const draw = (timestamp = 0, once = false) => {
     resize();
     const delta = lastFrame ? Math.min((timestamp - lastFrame) / 1000, .05) : 0;
     lastFrame = timestamp;
     if (!reducedMotion) elapsed += delta;
-    pointerX += (targetX - pointerX) * .06;
-    pointerY += (targetY - pointerY) * .06;
-    scrollProgress += (targetScrollProgress - scrollProgress) * .085;
-    updateStage(scrollProgress);
+    pointerX += (targetPointerX - pointerX) * .065;
+    pointerY += (targetPointerY - pointerY) * .065;
+    scrollProgress += (targetScroll - scrollProgress) * .085;
+    updateStory(scrollProgress);
     context.clearRect(0, 0, width, height);
-
-    const compact = window.innerWidth < 700;
-    const arc = Math.sin(scrollProgress * Math.PI);
-    const scene = {
-      x: Math.sin(scrollProgress * Math.PI * 2) * .18,
-      y: (compact ? -.05 : 0) + Math.cos(scrollProgress * Math.PI * 2) * .08,
-      rotationX: -.12 + pointerY * .4 + scrollProgress * .9,
-      rotationY: elapsed * .07 + pointerX * .65 + scrollProgress * Math.PI * 2.7,
-      rotationZ: -.08 + scrollProgress * .42,
-      camera: 6.8 - arc * .75,
-      zoom: Math.min(width, height) * (compact ? .135 : .16),
-      centerX: width * (compact ? .54 : .55),
-      centerY: height * (compact ? .42 : .49)
-    };
-
-    context.save();
-    context.globalCompositeOperation = "lighter";
-    const particleCount = compact ? 50 : dust.length;
-    for (let index = 0; index < particleCount; index += 1) {
-      const particle = dust[index];
-      const world = rotate(particle, 0, elapsed * .018 + scrollProgress * .7, 0);
-      const screen = project(world, 8.2, scene.zoom * .76, scene.centerX, scene.centerY);
-      const alpha = Math.max(.08, .34 - screen.depth * .025);
-      context.fillStyle = `rgba(83, 143, 255, ${alpha})`;
-      context.beginPath();
-      context.arc(screen.x, screen.y, particle.size * screen.scale, 0, Math.PI * 2);
-      context.fill();
-    }
-    const glowRadius = scene.zoom * (1.12 + arc * .2);
-    const glow = context.createRadialGradient(scene.centerX, scene.centerY, 0, scene.centerX, scene.centerY, glowRadius);
-    glow.addColorStop(0, "rgba(58, 122, 255, .22)");
-    glow.addColorStop(.45, "rgba(38, 95, 218, .08)");
-    glow.addColorStop(1, "rgba(15, 53, 120, 0)");
-    context.fillStyle = glow;
-    context.beginPath();
-    context.arc(scene.centerX, scene.centerY, glowRadius, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
-
-    const coreScale = 1.14 + arc * .22 + scrollProgress * .14 + Math.sin(elapsed * 1.25) * .025;
-    const transformed = vertices.map((point) => transform(point, { ...scene, scale: coreScale }));
-    const projected = transformed.map((point) => project(point, scene.camera, scene.zoom, scene.centerX, scene.centerY));
-    const sortedFaces = faces.map((face) => ({ face, z: face.reduce((sum, vertex) => sum + transformed[vertex].z, 0) / 3 })).sort((a, b) => a.z - b.z);
-    sortedFaces.forEach(({ face, z }) => {
-      const points = face.map((index) => projected[index]);
-      context.beginPath();
-      context.moveTo(points[0].x, points[0].y);
-      context.lineTo(points[1].x, points[1].y);
-      context.lineTo(points[2].x, points[2].y);
-      context.closePath();
-      const alpha = Math.max(.035, Math.min(.15, .055 + (z + 1.5) * .026));
-      context.fillStyle = `rgba(44, 111, 255, ${alpha})`;
-      context.fill();
-    });
-
-    context.lineWidth = compact ? 1.05 : 1.25;
-    context.strokeStyle = "rgba(119, 170, 255, .78)";
-    context.shadowColor = "rgba(62, 128, 255, .9)";
-    context.shadowBlur = 9;
-    edges.forEach(([a, b]) => {
-      context.beginPath();
-      context.moveTo(projected[a].x, projected[a].y);
-      context.lineTo(projected[b].x, projected[b].y);
-      context.stroke();
-    });
-    context.shadowBlur = 0;
-
-    drawRing(scene, { x: 1.05 + scrollProgress * .65, y: 0, z: scrollProgress * 1.7 }, 1.88 + scrollProgress * .52, "rgba(72, 137, 255, .58)", 1.15);
-    drawRing(scene, { x: 0, y: 1.1 + scrollProgress, z: -scrollProgress * 1.35 }, 2.15 + arc * .7, "rgba(93, 158, 255, .42)", 1);
-    drawRing(scene, { x: .48 + scrollProgress * .85, y: .75, z: scrollProgress * 1.9 }, 2.48 - scrollProgress * .25, "rgba(83, 131, 218, .3)", .85);
-
-    const cubeScale = 1.66 + scrollProgress * .42;
-    const projectedCube = cube.map((point) => {
-      const world = transform(point, { ...scene, scale: cubeScale, localX: -scrollProgress, localY: scrollProgress * 1.5 });
-      return project(world, scene.camera, scene.zoom, scene.centerX, scene.centerY);
-    });
-    context.strokeStyle = "rgba(80, 139, 244, .22)";
-    context.lineWidth = .8;
-    cubeEdges.forEach(([a, b]) => {
-      context.beginPath();
-      context.moveTo(projectedCube[a].x, projectedCube[a].y);
-      context.lineTo(projectedCube[b].x, projectedCube[b].y);
-      context.stroke();
-    });
-
-    context.save();
-    context.globalCompositeOperation = "lighter";
-    for (let index = 0; index < 8; index += 1) {
-      const angle = elapsed * .14 + scrollProgress * Math.PI * (1.7 + index * .035) + index * Math.PI / 4;
-      const radius = (index % 2 ? 2.08 : 1.85) + scrollProgress * .58;
-      const point = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius * .72, z: Math.sin(angle * 1.7) * .52 };
-      const screen = project(transform(point, { ...scene, scale: 1 }), scene.camera, scene.zoom, scene.centerX, scene.centerY);
-      context.fillStyle = "rgba(100, 166, 255, .95)";
-      context.shadowColor = "rgba(64, 132, 255, .95)";
-      context.shadowBlur = 14;
-      context.beginPath();
-      context.arc(screen.x, screen.y, (compact ? 3.2 : 4.1) * screen.scale, 0, Math.PI * 2);
-      context.fill();
-    }
-    context.restore();
-
-    if (!reducedMotion && visible) requestAnimationFrame(draw);
+    drawParticles();
+    tracePath();
+    drawMilestones();
+    drawTracker();
+    if (!once && !reducedMotion && visible) requestAnimationFrame(draw);
   };
 
   stage.addEventListener("pointermove", (event) => {
+    if (event.pointerType === "touch") return;
     const bounds = stage.getBoundingClientRect();
-    targetX = ((event.clientX - bounds.left) / bounds.width - .5) * 1.15;
-    targetY = ((event.clientY - bounds.top) / bounds.height - .5) * -1;
+    targetPointerX = (event.clientX - bounds.left) / bounds.width - .5;
+    targetPointerY = (event.clientY - bounds.top) / bounds.height - .5;
   }, { passive: true });
-  stage.addEventListener("pointerleave", () => { targetX = 0; targetY = 0; });
+  stage.addEventListener("pointerleave", () => {
+    targetPointerX = 0;
+    targetPointerY = 0;
+  });
+
   const observer = new IntersectionObserver(([entry]) => {
     const wasVisible = visible;
     visible = entry.isIntersecting;
@@ -294,12 +235,16 @@
       lastFrame = performance.now();
       requestAnimationFrame(draw);
     }
-  }, { rootMargin: "100px" });
+  }, { rootMargin: "120px" });
   observer.observe(stage);
-  window.addEventListener("resize", resize, { passive: true });
-  window.addEventListener("scroll", updateScrollProgress, { passive: true });
-  updateScrollProgress();
-  updateStage(0);
+  window.addEventListener("resize", () => {
+    resize();
+    updateScrollTarget();
+  }, { passive: true });
+  window.addEventListener("scroll", updateScrollTarget, { passive: true });
+  art?.addEventListener("load", resize, { once: true });
+  updateScrollTarget();
+  updateStory(0);
   resize();
   requestAnimationFrame(draw);
 })();
