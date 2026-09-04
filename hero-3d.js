@@ -341,21 +341,21 @@
     context.beginPath();
     context.ellipse(0, 0, ring.radiusX, ring.radiusY, 0, start, end);
     context.strokeStyle = "rgba(4, 6, 8, .92)";
-    context.lineWidth = Math.max(8, ring.radiusY * .22);
+    context.lineWidth = Math.max(7, ring.radiusY * .2);
     context.stroke();
     const gradient = context.createLinearGradient(-ring.radiusX, 0, ring.radiusX, 0);
-    gradient.addColorStop(0, `rgba(86, 94, 102, ${.42 + focus * .12})`);
-    gradient.addColorStop(.4, `rgba(${Math.round(142 + focus * 70)}, ${Math.round(135 + focus * 39)}, ${Math.round(115 - focus * 4)}, ${.72 + focus * .22})`);
-    gradient.addColorStop(.62, `rgba(${Math.round(196 + focus * 28)}, ${Math.round(178 + focus * 12)}, ${Math.round(139 - focus * 8)}, ${.76 + focus * .2})`);
-    gradient.addColorStop(1, "rgba(64, 72, 80, .48)");
+    gradient.addColorStop(0, `rgba(98, 108, 118, ${.58 + focus * .12})`);
+    gradient.addColorStop(.36, `rgba(${Math.round(158 + focus * 62)}, ${Math.round(151 + focus * 34)}, ${Math.round(128 - focus * 3)}, ${.84 + focus * .14})`);
+    gradient.addColorStop(.58, `rgba(${Math.round(210 + focus * 24)}, ${Math.round(193 + focus * 13)}, ${Math.round(153 - focus * 6)}, ${.88 + focus * .1})`);
+    gradient.addColorStop(1, "rgba(82, 92, 102, .62)");
     context.strokeStyle = gradient;
     context.lineWidth = Math.max(5, ring.radiusY * .13);
     context.shadowColor = focus > .4 ? "rgba(211, 178, 116, .32)" : "rgba(132, 151, 170, .13)";
-    context.shadowBlur = focus > .4 ? 24 : 10;
+    context.shadowBlur = focus > .4 ? 10 : 4;
     context.stroke();
     context.shadowBlur = 0;
-    context.strokeStyle = `rgba(244, 231, 205, ${.12 + focus * .36})`;
-    context.lineWidth = 1;
+    context.strokeStyle = `rgba(252, 240, 216, ${.22 + focus * .42})`;
+    context.lineWidth = 1.25;
     context.stroke();
     context.restore();
   };
@@ -372,7 +372,7 @@
 
     const centerX = width * (window.innerWidth < 700 ? .53 : .55) + pointerX * 12;
     const centerY = height * .43 + pointerY * 9;
-    const scale = Math.min(width, height) * (window.innerWidth < 700 ? .35 : .33);
+    const scale = Math.min(width, height) * (window.innerWidth < 700 ? .38 : .36);
     const rings = [0, 1, 2, 3].map(index => ringGeometry(index, centerX, centerY, scale));
 
     context.save();
@@ -394,9 +394,10 @@
     const coreBottom = centerY + scale * .89;
     const coreGradient = context.createLinearGradient(centerX - coreWidth, 0, centerX + coreWidth, 0);
     coreGradient.addColorStop(0, "#090b0e");
-    coreGradient.addColorStop(.32, "#34383c");
-    coreGradient.addColorStop(.48, "#77756d");
-    coreGradient.addColorStop(.57, "#26292d");
+    coreGradient.addColorStop(.27, "#2b3035");
+    coreGradient.addColorStop(.43, "#807b70");
+    coreGradient.addColorStop(.5, "#b2a78f");
+    coreGradient.addColorStop(.58, "#30343a");
     coreGradient.addColorStop(1, "#07090b");
     context.beginPath();
     context.moveTo(centerX - coreWidth * .58, coreTop + coreWidth * .22);
@@ -408,11 +409,11 @@
     context.closePath();
     context.fillStyle = coreGradient;
     context.shadowColor = "rgba(0,0,0,.75)";
-    context.shadowBlur = 42;
+    context.shadowBlur = 18;
     context.fill();
     context.shadowBlur = 0;
-    context.strokeStyle = "rgba(228, 213, 184, .28)";
-    context.lineWidth = 1;
+    context.strokeStyle = "rgba(238, 220, 185, .44)";
+    context.lineWidth = 1.25;
     context.stroke();
 
     rings.forEach((ring, index) => strokeRing(ring, index, true));
