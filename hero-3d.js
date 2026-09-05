@@ -1,489 +1,321 @@
 (() => {
-  let canvas = document.getElementById("heroCanvas");
+  const canvas = document.getElementById("heroCanvas");
   const stage = document.getElementById("heroStage");
   if (!canvas || !stage) return;
 
   const hero = stage.closest(".hero-immersive");
   const heroCopy = hero?.querySelector(".hero-copy");
   const chapterNumber = document.getElementById("stageChapterNumber");
-  const stagePoints = [...stage.querySelectorAll(".stage-point")];
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const stagePoints = [...stage.querySelectorAll(".project-track .stage-point")];
+  const panels = [...stage.querySelectorAll("[data-scene-panel]")];
+  const context = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  if (!hero || !context) return;
+
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+  const ease = value => 1 - Math.pow(1 - clamp(value), 3);
+  const profiles = [
+    { x: -46, y: -35, z: -90, r: -7 },
+    { x: 48, y: -54, z: 70, r: 5 },
+    { x: -62, y: 24, z: 20, r: -5 },
+    { x: 66, y: -16, z: 105, r: 4 },
+    { x: -48, y: 42, z: 65, r: 5 },
+    { x: 36, y: 50, z: -20, r: -4 },
+    { x: 74, y: 36, z: 45, r: 6 },
+    { x: 8, y: -62, z: -55, r: -5 }
+  ];
+  const particleSeed = Array.from({ length: 130 }, (_, index) => ({
+    x: ((index * 47) % 131) / 131,
+    y: ((index * 83) % 137) / 137,
+    depth: .25 + ((index * 29) % 71) / 71,
+    drift: ((index * 13) % 17) / 17,
+    size: index % 11 === 0 ? 1.8 : index % 5 === 0 ? 1.2 : .7
+  }));
 
   let width = 1;
   let height = 1;
   let pixelRatio = 1;
-  let targetScroll = 0;
-  let scrollProgress = 0;
+  let targetProgress = 0;
+  let progress = 0;
   let targetPointerX = 0;
   let targetPointerY = 0;
   let pointerX = 0;
   let pointerY = 0;
-  let activeStage = -1;
+  let activePhase = -1;
+  let lastTime = 0;
   let elapsed = 0;
-  let lastFrame = 0;
   let visible = true;
-  let gl = null;
-  let fallbackContext = null;
-  let webglProgram = null;
-  let uniforms = null;
+  let animationFrame = 0;
 
-  const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
-
-  const vertexShaderSource = `#version 300 es
-    in vec2 aPosition;
-    void main() {
-      gl_Position = vec4(aPosition, 0.0, 1.0);
-    }
-  `;
-
-  const fragmentShaderSource = `#version 300 es
-    precision highp float;
-    out vec4 fragColor;
-    uniform vec2 uResolution;
-    uniform vec2 uPointer;
-    uniform float uTime;
-    uniform float uScroll;
-
-    mat2 rotate2d(float angle) {
-      float c = cos(angle);
-      float s = sin(angle);
-      return mat2(c, -s, s, c);
-    }
-
-    float sdRoundBox(vec3 point, vec3 bounds, float radius) {
-      vec3 q = abs(point) - bounds + radius;
-      return min(max(q.x, max(q.y, q.z)), 0.0) + length(max(q, 0.0)) - radius;
-    }
-
-    float sdTorus(vec3 point, vec2 torus) {
-      vec2 q = vec2(length(point.xz) - torus.x, point.y);
-      return length(q) - torus.y;
-    }
-
-    vec2 closer(vec2 current, float distanceValue, float materialId) {
-      return distanceValue < current.x ? vec2(distanceValue, materialId) : current;
-    }
-
-    vec2 mapScene(vec3 point) {
-      vec2 result = vec2(20.0, 0.0);
-
-      vec3 core = point;
-      core.xz = rotate2d(-0.08 + uScroll * 0.12) * core.xz;
-      result = closer(result, sdRoundBox(core, vec3(0.25, 1.28, 0.19), 0.055), 1.0);
-
-      float phase = uScroll * 3.0;
-      for (int index = 0; index < 4; index++) {
-        float fi = float(index);
-        vec3 ring = point;
-        float reveal = smoothstep(-0.15, 0.9, phase - fi + 0.72);
-        float spread = 1.0 - reveal;
-        float ringY = -0.95 + fi * 0.64;
-        ring -= vec3(
-          sin(fi * 1.91 + 0.6) * spread * 0.58,
-          ringY + cos(fi * 1.47) * spread * 0.16,
-          cos(fi * 1.63 + 0.4) * spread * 0.42
-        );
-        ring.yz = rotate2d(0.42 + fi * 0.18 + uScroll * 0.26) * ring.yz;
-        ring.xy = rotate2d(-0.32 + fi * 0.2 + sin(uTime * 0.18 + fi) * 0.025) * ring.xy;
-        float radius = 0.78 + fi * 0.055;
-        result = closer(result, sdTorus(ring, vec2(radius, 0.057)), 2.0 + fi);
-      }
-
-      vec3 seal = point - vec3(0.0, 1.44, 0.0);
-      result = closer(result, length(seal) - 0.105, 6.0);
-
-      float floorDistance = point.y + 1.58;
-      result = closer(result, floorDistance, 9.0);
-      return result;
-    }
-
-    vec3 sceneNormal(vec3 point) {
-      vec2 epsilon = vec2(0.0015, 0.0);
-      float center = mapScene(point).x;
-      return normalize(vec3(
-        mapScene(point + epsilon.xyy).x - center,
-        mapScene(point + epsilon.yxy).x - center,
-        mapScene(point + epsilon.yyx).x - center
-      ));
-    }
-
-    float softShadow(vec3 origin, vec3 direction) {
-      float shade = 1.0;
-      float travel = 0.025;
-      for (int index = 0; index < 30; index++) {
-        float distanceValue = mapScene(origin + direction * travel).x;
-        shade = min(shade, 16.0 * distanceValue / travel);
-        travel += clamp(distanceValue, 0.018, 0.18);
-        if (travel > 4.8) break;
-      }
-      return clamp(shade, 0.16, 1.0);
-    }
-
-    vec3 background(vec2 uv) {
-      float halo = exp(-1.7 * dot(uv - vec2(0.12, 0.02), uv - vec2(0.12, 0.02)));
-      float vignette = smoothstep(1.45, 0.2, length(uv * vec2(0.72, 1.0)));
-      vec3 color = vec3(0.007, 0.009, 0.012);
-      color += vec3(0.032, 0.037, 0.044) * halo;
-      color += vec3(0.014, 0.012, 0.009) * vignette;
-      float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-      color += (grain - 0.5) * 0.012;
-      return color;
-    }
-
-    void main() {
-      vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / uResolution.y;
-      uv.x -= 0.08;
-      float cameraAngle = -0.62 + uScroll * 0.92 + uPointer.x * 0.18 + sin(uTime * 0.12) * 0.022;
-      float cameraRadius = 4.2 - uScroll * 0.48;
-      vec3 camera = vec3(sin(cameraAngle) * cameraRadius, 0.06 + uPointer.y * 0.25, cos(cameraAngle) * cameraRadius);
-      vec3 target = vec3(0.0, -0.03, 0.0);
-      vec3 forward = normalize(target - camera);
-      vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));
-      vec3 up = cross(right, forward);
-      vec3 ray = normalize(forward * 1.8 + right * uv.x + up * uv.y);
-
-      vec3 color = background(uv);
-      float travel = 0.0;
-      float material = 0.0;
-      float distanceValue = 0.0;
-      float glow = 0.0;
-
-      for (int index = 0; index < 92; index++) {
-        vec3 point = camera + ray * travel;
-        vec2 scene = mapScene(point);
-        distanceValue = scene.x;
-        material = scene.y;
-        glow += exp(-22.0 * abs(distanceValue)) * 0.0024;
-        if (abs(distanceValue) < 0.0015 || travel > 10.0) break;
-        travel += distanceValue * 0.78;
-      }
-
-      if (travel < 10.0) {
-        vec3 point = camera + ray * travel;
-        vec3 normal = sceneNormal(point);
-        vec3 lightDirection = normalize(vec3(-0.62, 0.84, 0.4));
-        vec3 coolLight = normalize(vec3(0.7, 0.18, -0.55));
-        float shadow = softShadow(point + normal * 0.006, lightDirection);
-        float diffuse = max(dot(normal, lightDirection), 0.0) * shadow;
-        float secondary = max(dot(normal, coolLight), 0.0);
-        vec3 halfVector = normalize(lightDirection - ray);
-        float specular = pow(max(dot(normal, halfVector), 0.0), 90.0) * shadow;
-        float fresnel = pow(clamp(1.0 + dot(normal, ray), 0.0, 1.0), 4.0);
-
-        vec3 graphite = vec3(0.055, 0.063, 0.071);
-        vec3 titanium = vec3(0.22, 0.235, 0.25);
-        vec3 champagne = vec3(0.74, 0.58, 0.34);
-        vec3 ivory = vec3(0.9, 0.84, 0.7);
-        vec3 base = graphite;
-        float metallic = 1.0;
-
-        if (material > 1.5 && material < 5.8) {
-          float ringIndex = floor(material - 2.0 + 0.5);
-          float focus = 1.0 - smoothstep(0.24, 0.9, abs(uScroll * 3.0 - ringIndex));
-          base = mix(titanium, champagne, 0.24 + focus * 0.76);
-        } else if (material > 5.8 && material < 7.0) {
-          base = ivory;
-        } else if (material > 8.0) {
-          base = vec3(0.008, 0.01, 0.013);
-          metallic = 0.2;
-        }
-
-        color = base * (0.16 + diffuse * 0.88);
-        color += vec3(0.2, 0.31, 0.42) * secondary * 0.17;
-        color += ivory * specular * (0.5 + metallic * 1.3);
-        color += mix(vec3(0.11, 0.15, 0.2), champagne, 0.32) * fresnel * 0.78;
-
-        if (material > 8.0) {
-          float grid = smoothstep(0.975, 1.0, cos(point.x * 5.0) * cos(point.z * 5.0));
-          color += vec3(0.19, 0.16, 0.11) * grid * 0.06;
-          color *= 0.72 + shadow * 0.28;
-        }
-
-        float fog = 1.0 - exp(-travel * travel * 0.012);
-        color = mix(color, background(uv), fog);
-      }
-
-      color += vec3(0.49, 0.37, 0.2) * glow;
-      color = pow(color, vec3(0.88));
-      fragColor = vec4(color, 1.0);
-    }
-  `;
-
-  const createShader = (type, source) => {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
-    }
-    return shader;
-  };
-
-  const initializeWebGL = () => {
-    gl = canvas.getContext("webgl2", {
-      alpha: false,
-      antialias: true,
-      depth: false,
-      powerPreference: "high-performance",
-      preserveDrawingBuffer: false
-    });
-    if (!gl) return false;
-
-    try {
-      const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
-      const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-      webglProgram = gl.createProgram();
-      gl.attachShader(webglProgram, vertexShader);
-      gl.attachShader(webglProgram, fragmentShader);
-      gl.linkProgram(webglProgram);
-      if (!gl.getProgramParameter(webglProgram, gl.LINK_STATUS)) {
-        throw new Error(gl.getProgramInfoLog(webglProgram) || "Shader linking failed");
-      }
-      gl.useProgram(webglProgram);
-      const buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-      const position = gl.getAttribLocation(webglProgram, "aPosition");
-      gl.enableVertexAttribArray(position);
-      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-      uniforms = {
-        resolution: gl.getUniformLocation(webglProgram, "uResolution"),
-        pointer: gl.getUniformLocation(webglProgram, "uPointer"),
-        time: gl.getUniformLocation(webglProgram, "uTime"),
-        scroll: gl.getUniformLocation(webglProgram, "uScroll")
-      };
-      stage.dataset.renderer = "webgl";
-      return true;
-    } catch (error) {
-      gl = null;
-      return false;
-    }
-  };
-
-  const initializeFallback = () => {
-    if (gl) return;
-    const replacement = canvas.cloneNode(false);
-    canvas.replaceWith(replacement);
-    canvas = replacement;
-    fallbackContext = canvas.getContext("2d", { alpha: false });
-    stage.dataset.renderer = "canvas";
-  };
+  const isMobile = () => window.innerWidth <= 940;
 
   const resize = () => {
-    pixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.2 : 1.5);
-    width = Math.max(1, canvas.clientWidth);
-    height = Math.max(1, canvas.clientHeight);
+    width = Math.max(1, stage.clientWidth);
+    height = Math.max(1, stage.clientHeight);
+    pixelRatio = Math.min(window.devicePixelRatio || 1, isMobile() ? 1.25 : 1.55);
     const renderWidth = Math.round(width * pixelRatio);
     const renderHeight = Math.round(height * pixelRatio);
     if (canvas.width !== renderWidth || canvas.height !== renderHeight) {
       canvas.width = renderWidth;
       canvas.height = renderHeight;
     }
-    if (gl) gl.viewport(0, 0, renderWidth, renderHeight);
-    if (fallbackContext) fallbackContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   };
 
-  const updateScrollTarget = () => {
-    if (!hero) return;
+  const updateProgressTarget = () => {
     const heroTop = window.scrollY + hero.getBoundingClientRect().top;
-    const copyOffset = window.innerWidth <= 940 ? (heroCopy?.offsetHeight || 0) : 0;
-    const start = heroTop + copyOffset;
+    const mobileOffset = isMobile() ? (heroCopy?.offsetHeight || window.innerHeight) : 0;
+    const start = heroTop + mobileOffset;
     const end = heroTop + hero.offsetHeight - window.innerHeight;
-    targetScroll = clamp((window.scrollY - start) / Math.max(end - start, 1));
-    if (reducedMotion) {
-      scrollProgress = targetScroll;
-      updateStory(scrollProgress);
-      renderFrame(performance.now(), true);
+    targetProgress = clamp((window.scrollY - start) / Math.max(end - start, 1));
+    if (reducedMotion.matches) {
+      progress = targetProgress;
+      updateScene(performance.now());
+      draw();
     }
   };
 
-  const updateStory = (progress) => {
-    const nextStage = Math.min(stagePoints.length - 1, Math.floor(clamp(progress) * stagePoints.length));
-    if (nextStage !== activeStage) {
-      activeStage = nextStage;
-      stagePoints.forEach((point, index) => point.classList.toggle("is-active", index === activeStage));
-      if (hero) hero.dataset.phase = String(activeStage);
-      if (chapterNumber) chapterNumber.textContent = String(activeStage + 1).padStart(2, "0");
+  const updatePhase = () => {
+    const nextPhase = Math.min(3, Math.floor(clamp(progress) * 4));
+    if (nextPhase === activePhase) return;
+    activePhase = nextPhase;
+    hero.dataset.phase = String(activePhase);
+    stagePoints.forEach((point, index) => point.classList.toggle("is-active", index === activePhase));
+    panels.forEach(panel => panel.classList.toggle("is-current", Number(panel.dataset.scenePhase) === activePhase));
+    if (chapterNumber) chapterNumber.textContent = String(activePhase + 1).padStart(2, "0");
+  };
+
+  const updatePanels = () => {
+    const assembled = ease(progress * 1.04);
+    const scatter = 1 - assembled;
+    const mobileScale = window.innerWidth <= 700 ? .58 : isMobile() ? .76 : 1;
+    panels.forEach((panel, index) => {
+      const profile = profiles[index] || profiles[0];
+      const panelPhase = Number(panel.dataset.scenePhase || 0);
+      const phaseDistance = Math.abs(progress * 3 - panelPhase);
+      const focus = 1 - clamp(phaseDistance / .9);
+      const driftX = Math.sin(elapsed * .24 + index * 1.37) * (4 + scatter * 8);
+      const driftY = Math.cos(elapsed * .2 + index * .91) * (3 + scatter * 6);
+      const x = (profile.x * scatter + driftX + pointerX * (9 + index % 3 * 4)) * mobileScale;
+      const y = (profile.y * scatter + driftY + pointerY * (7 + index % 2 * 5)) * mobileScale;
+      const z = profile.z * scatter + focus * 42;
+      const rotateX = pointerY * -2.8 + Math.sin(index) * scatter * 2.2;
+      const rotateY = pointerX * 4.2 + profile.r * scatter;
+      const rotateZ = profile.r * scatter * .62;
+      const scale = .9 + assembled * .1 + focus * .045;
+      panel.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, ${z.toFixed(2)}px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) rotateZ(${rotateZ.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      panel.style.opacity = String(.46 + assembled * .14 + focus * .4);
+    });
+  };
+
+  const updateScene = timestamp => {
+    const delta = lastTime ? Math.min((timestamp - lastTime) / 1000, .05) : 0;
+    lastTime = timestamp;
+    if (!reducedMotion.matches) elapsed += delta;
+    progress += (targetProgress - progress) * (reducedMotion.matches ? 1 : .075);
+    pointerX += (targetPointerX - pointerX) * .065;
+    pointerY += (targetPointerY - pointerY) * .065;
+    hero.style.setProperty("--hero-progress", progress.toFixed(4));
+    updatePhase();
+    updatePanels();
+  };
+
+  const drawBackdrop = () => {
+    const gradient = context.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, "#030b17");
+    gradient.addColorStop(.54, "#061324");
+    gradient.addColorStop(1, "#081b31");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, width, height);
+
+    const halo = context.createRadialGradient(width * .67, height * .48, 0, width * .67, height * .48, Math.max(width, height) * .56);
+    halo.addColorStop(0, `rgba(44, 103, 241, ${.13 + progress * .07})`);
+    halo.addColorStop(.42, "rgba(20, 65, 145, .065)");
+    halo.addColorStop(1, "rgba(2, 7, 17, 0)");
+    context.fillStyle = halo;
+    context.fillRect(0, 0, width, height);
+  };
+
+  const drawGrid = () => {
+    const grid = isMobile() ? 56 : 76;
+    context.save();
+    context.lineWidth = .55;
+    context.strokeStyle = "rgba(110, 158, 220, .075)";
+    const offsetX = (pointerX * 18 + elapsed * 1.5) % grid;
+    const offsetY = (pointerY * 14) % grid;
+    for (let x = offsetX; x < width; x += grid) {
+      context.beginPath();
+      context.moveTo(x, 0);
+      context.lineTo(x, height);
+      context.stroke();
     }
-    hero?.style.setProperty("--hero-scroll", `${(progress * 100).toFixed(2)}%`);
+    for (let y = offsetY; y < height; y += grid) {
+      context.beginPath();
+      context.moveTo(0, y);
+      context.lineTo(width, y);
+      context.stroke();
+    }
+    context.restore();
   };
 
-  const drawWebGL = () => {
-    gl.useProgram(webglProgram);
-    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
-    gl.uniform2f(uniforms.pointer, pointerX, pointerY);
-    gl.uniform1f(uniforms.time, elapsed);
-    gl.uniform1f(uniforms.scroll, scrollProgress);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  const drawParticles = () => {
+    const count = isMobile() ? 82 : particleSeed.length;
+    context.save();
+    for (let index = 0; index < count; index += 1) {
+      const particle = particleSeed[index];
+      const drift = Math.sin(elapsed * (.08 + particle.drift * .08) + index) * 11;
+      const x = (particle.x * width + drift + pointerX * 28 * particle.depth + progress * width * .035 * particle.depth) % width;
+      const y = particle.y * height + Math.cos(elapsed * .11 + index * .7) * 6 + pointerY * 18 * particle.depth;
+      const alpha = .08 + particle.depth * .24;
+      context.fillStyle = `rgba(105, 160, 255, ${alpha})`;
+      context.fillRect(x, y, particle.size, particle.size);
+    }
+    context.restore();
   };
 
-  const ringGeometry = (index, centerX, centerY, scale) => {
-    const phase = scrollProgress * 3;
-    const reveal = clamp((phase - index + .72) / 1.05);
-    const spread = 1 - reveal;
+  const drawContours = () => {
+    const lineCount = isMobile() ? 18 : 27;
+    context.save();
+    context.lineWidth = .7;
+    for (let line = 0; line < lineCount; line += 1) {
+      const depth = line / lineCount;
+      context.beginPath();
+      for (let x = -20; x <= width + 20; x += 13) {
+        const normalized = x / Math.max(width, 1);
+        const ridge = Math.sin(normalized * 8.2 + line * .31 + progress * 1.8) * (25 + depth * 35);
+        const detail = Math.sin(normalized * 21 - line * .18 + elapsed * .035) * (5 + depth * 7);
+        const valley = Math.exp(-Math.pow(normalized - .63, 2) * 9) * (-64 - progress * 25);
+        const y = height * (.67 + depth * .016) + ridge + detail + valley + pointerY * 10 * depth;
+        if (x === -20) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.strokeStyle = `rgba(86, 137, 211, ${.045 + depth * .12})`;
+      context.stroke();
+    }
+    context.restore();
+  };
+
+  const routePoint = amount => {
+    const t = clamp(amount);
+    const mt = 1 - t;
+    const start = { x: width * .06, y: height * .77 };
+    const c1 = { x: width * .3, y: height * (.72 - pointerY * .02) };
+    const c2 = { x: width * .7, y: height * (.77 - progress * .19) };
+    const end = { x: width * .92, y: height * (.43 - progress * .08) };
     return {
-      x: centerX + Math.sin(index * 1.91 + .6) * spread * scale * .32,
-      y: centerY + (index - 1.5) * scale * .34 + Math.cos(index * 1.47) * spread * scale * .1,
-      radiusX: scale * (.53 + index * .035),
-      radiusY: scale * (.125 + index * .012),
-      rotation: -.27 + index * .17 + scrollProgress * .26 + pointerX * .08
+      x: mt * mt * mt * start.x + 3 * mt * mt * t * c1.x + 3 * mt * t * t * c2.x + t * t * t * end.x,
+      y: mt * mt * mt * start.y + 3 * mt * mt * t * c1.y + 3 * mt * t * t * c2.y + t * t * t * end.y
     };
   };
 
-  const strokeRing = (ring, index, frontOnly = false) => {
-    const context = fallbackContext;
-    const focus = 1 - clamp(Math.abs(scrollProgress * 3 - index) / .82);
-    const start = frontOnly ? 0 : Math.PI;
-    const end = frontOnly ? Math.PI : Math.PI * 2;
+  const drawRoute = () => {
+    const start = routePoint(0);
+    const controlOne = { x: width * .3, y: height * (.72 - pointerY * .02) };
+    const controlTwo = { x: width * .7, y: height * (.77 - progress * .19) };
+    const end = routePoint(1);
     context.save();
-    context.translate(ring.x, ring.y);
-    context.rotate(ring.rotation);
     context.beginPath();
-    context.ellipse(0, 0, ring.radiusX, ring.radiusY, 0, start, end);
-    context.strokeStyle = "rgba(4, 6, 8, .92)";
-    context.lineWidth = Math.max(7, ring.radiusY * .2);
+    context.moveTo(start.x, start.y);
+    context.bezierCurveTo(controlOne.x, controlOne.y, controlTwo.x, controlTwo.y, end.x, end.y);
+    context.strokeStyle = "rgba(40, 94, 210, .28)";
+    context.lineWidth = 8;
+    context.shadowColor = "rgba(43, 105, 255, .58)";
+    context.shadowBlur = 22;
     context.stroke();
-    const gradient = context.createLinearGradient(-ring.radiusX, 0, ring.radiusX, 0);
-    gradient.addColorStop(0, `rgba(98, 108, 118, ${.58 + focus * .12})`);
-    gradient.addColorStop(.36, `rgba(${Math.round(158 + focus * 62)}, ${Math.round(151 + focus * 34)}, ${Math.round(128 - focus * 3)}, ${.84 + focus * .14})`);
-    gradient.addColorStop(.58, `rgba(${Math.round(210 + focus * 24)}, ${Math.round(193 + focus * 13)}, ${Math.round(153 - focus * 6)}, ${.88 + focus * .1})`);
-    gradient.addColorStop(1, "rgba(82, 92, 102, .62)");
-    context.strokeStyle = gradient;
-    context.lineWidth = Math.max(5, ring.radiusY * .13);
-    context.shadowColor = focus > .4 ? "rgba(211, 178, 116, .32)" : "rgba(132, 151, 170, .13)";
-    context.shadowBlur = focus > .4 ? 10 : 4;
+
+    context.beginPath();
+    context.moveTo(start.x, start.y);
+    context.bezierCurveTo(controlOne.x, controlOne.y, controlTwo.x, controlTwo.y, end.x, end.y);
+    context.strokeStyle = "rgba(133, 177, 255, .94)";
+    context.lineWidth = 1.7;
+    context.setLineDash([5 + progress * 24, 4]);
+    context.lineDashOffset = -elapsed * 22;
     context.stroke();
-    context.shadowBlur = 0;
-    context.strokeStyle = `rgba(252, 240, 216, ${.22 + focus * .42})`;
-    context.lineWidth = 1.25;
-    context.stroke();
+    context.setLineDash([]);
+
+    const activeAmount = clamp((progress * 3 - Math.floor(progress * 3)) * .22 + (Math.floor(progress * 3) / 3), 0, 1);
+    const tracker = routePoint(activeAmount);
+    const trackerGlow = context.createRadialGradient(tracker.x, tracker.y, 0, tracker.x, tracker.y, 28);
+    trackerGlow.addColorStop(0, "rgba(235, 244, 255, 1)");
+    trackerGlow.addColorStop(.14, "rgba(105, 158, 255, .9)");
+    trackerGlow.addColorStop(1, "rgba(53, 109, 255, 0)");
+    context.fillStyle = trackerGlow;
+    context.beginPath();
+    context.arc(tracker.x, tracker.y, 28, 0, Math.PI * 2);
+    context.fill();
     context.restore();
   };
 
-  const drawFallback = () => {
-    const context = fallbackContext;
-    context.clearRect(0, 0, width, height);
-    const background = context.createRadialGradient(width * .56, height * .44, 0, width * .56, height * .44, Math.max(width, height) * .72);
-    background.addColorStop(0, "#181a1d");
-    background.addColorStop(.42, "#090b0e");
-    background.addColorStop(1, "#030405");
-    context.fillStyle = background;
-    context.fillRect(0, 0, width, height);
-
-    const centerX = width * (window.innerWidth < 700 ? .53 : .55) + pointerX * 12;
-    const centerY = height * .43 + pointerY * 9;
-    const scale = Math.min(width, height) * (window.innerWidth < 700 ? .38 : .36);
-    const rings = [0, 1, 2, 3].map(index => ringGeometry(index, centerX, centerY, scale));
-
+  const drawConnections = () => {
+    const anchors = [[.17, .27], [.62, .22], [.28, .42], [.84, .36], [.19, .58], [.61, .62], [.86, .67], [.54, .42]];
     context.save();
-    context.globalCompositeOperation = "lighter";
-    for (let index = 0; index < 42; index += 1) {
-      const angle = index * 2.399 + elapsed * .025;
-      const radius = scale * (.7 + (index % 9) * .11);
-      const x = centerX + Math.cos(angle) * radius;
-      const y = centerY + Math.sin(angle) * radius * .42;
-      context.fillStyle = `rgba(208, 182, 132, ${.025 + (index % 4) * .012})`;
-      context.fillRect(x, y, 1, 1);
-    }
+    context.lineWidth = .65;
+    anchors.forEach((anchor, index) => {
+      const panelPhase = Number(panels[index]?.dataset.scenePhase || 0);
+      const focus = 1 - clamp(Math.abs(progress * 3 - panelPhase) / 1.05);
+      const point = routePoint(.18 + index * .095);
+      const x = width * anchor[0] + pointerX * (10 + index);
+      const y = height * anchor[1] + pointerY * (8 + index * .5);
+      context.beginPath();
+      context.moveTo(x, y);
+      context.quadraticCurveTo((x + point.x) * .53, y + (point.y - y) * .7, point.x, point.y);
+      context.strokeStyle = `rgba(91, 151, 255, ${.09 + focus * .28})`;
+      context.shadowColor = "rgba(53, 109, 255, .35)";
+      context.shadowBlur = focus * 9;
+      context.stroke();
+    });
     context.restore();
-
-    rings.forEach((ring, index) => strokeRing(ring, index, false));
-
-    const coreWidth = scale * .28;
-    const coreTop = centerY - scale * .89;
-    const coreBottom = centerY + scale * .89;
-    const coreGradient = context.createLinearGradient(centerX - coreWidth, 0, centerX + coreWidth, 0);
-    coreGradient.addColorStop(0, "#090b0e");
-    coreGradient.addColorStop(.27, "#2b3035");
-    coreGradient.addColorStop(.43, "#807b70");
-    coreGradient.addColorStop(.5, "#b2a78f");
-    coreGradient.addColorStop(.58, "#30343a");
-    coreGradient.addColorStop(1, "#07090b");
-    context.beginPath();
-    context.moveTo(centerX - coreWidth * .58, coreTop + coreWidth * .22);
-    context.lineTo(centerX, coreTop);
-    context.lineTo(centerX + coreWidth * .58, coreTop + coreWidth * .22);
-    context.lineTo(centerX + coreWidth * .72, coreBottom - coreWidth * .2);
-    context.lineTo(centerX, coreBottom);
-    context.lineTo(centerX - coreWidth * .72, coreBottom - coreWidth * .2);
-    context.closePath();
-    context.fillStyle = coreGradient;
-    context.shadowColor = "rgba(0,0,0,.75)";
-    context.shadowBlur = 18;
-    context.fill();
-    context.shadowBlur = 0;
-    context.strokeStyle = "rgba(238, 220, 185, .44)";
-    context.lineWidth = 1.25;
-    context.stroke();
-
-    rings.forEach((ring, index) => strokeRing(ring, index, true));
-
-    const activeRing = rings[activeStage < 0 ? 0 : activeStage];
-    const trackerAngle = elapsed * .3 + scrollProgress * Math.PI * 1.6;
-    const trackerX = activeRing.x + Math.cos(trackerAngle) * activeRing.radiusX;
-    const trackerY = activeRing.y + Math.sin(trackerAngle) * activeRing.radiusY;
-    const tracker = context.createRadialGradient(trackerX, trackerY, 0, trackerX, trackerY, 26);
-    tracker.addColorStop(0, "rgba(255, 244, 220, .96)");
-    tracker.addColorStop(.18, "rgba(218, 181, 113, .58)");
-    tracker.addColorStop(1, "rgba(195, 147, 68, 0)");
-    context.fillStyle = tracker;
-    context.beginPath();
-    context.arc(trackerX, trackerY, 26, 0, Math.PI * 2);
-    context.fill();
-
-    const floor = context.createRadialGradient(centerX, coreBottom + scale * .12, 0, centerX, coreBottom + scale * .12, scale * .88);
-    floor.addColorStop(0, "rgba(183, 145, 80, .1)");
-    floor.addColorStop(1, "rgba(0,0,0,0)");
-    context.fillStyle = floor;
-    context.beginPath();
-    context.ellipse(centerX, coreBottom + scale * .12, scale * .88, scale * .19, 0, 0, Math.PI * 2);
-    context.fill();
   };
 
-  const renderFrame = (timestamp = 0, once = false) => {
+  const draw = () => {
     resize();
-    const delta = lastFrame ? Math.min((timestamp - lastFrame) / 1000, .05) : 0;
-    lastFrame = timestamp;
-    if (!reducedMotion) elapsed += delta;
-    pointerX += (targetPointerX - pointerX) * .055;
-    pointerY += (targetPointerY - pointerY) * .055;
-    scrollProgress += (targetScroll - scrollProgress) * .08;
-    updateStory(scrollProgress);
-    if (gl) drawWebGL();
-    else drawFallback();
-    if (!once && !reducedMotion && visible) requestAnimationFrame(renderFrame);
+    drawBackdrop();
+    drawGrid();
+    drawParticles();
+    drawContours();
+    drawConnections();
+    drawRoute();
+  };
+
+  const render = timestamp => {
+    updateScene(timestamp);
+    draw();
+    if (!reducedMotion.matches && visible) animationFrame = requestAnimationFrame(render);
   };
 
   stage.addEventListener("pointermove", event => {
-    if (event.pointerType === "touch") return;
+    if (event.pointerType === "touch" || reducedMotion.matches) return;
     const bounds = stage.getBoundingClientRect();
-    targetPointerX = (event.clientX - bounds.left) / bounds.width - .5;
-    targetPointerY = ((event.clientY - bounds.top) / bounds.height - .5) * -1;
+    targetPointerX = clamp((event.clientX - bounds.left) / bounds.width - .5, -.5, .5);
+    targetPointerY = clamp((event.clientY - bounds.top) / bounds.height - .5, -.5, .5) * -1;
   }, { passive: true });
-
   stage.addEventListener("pointerleave", () => {
     targetPointerX = 0;
     targetPointerY = 0;
   });
 
-  const observer = new IntersectionObserver(([entry]) => {
+  const visibilityObserver = new IntersectionObserver(([entry]) => {
     const wasVisible = visible;
     visible = entry.isIntersecting;
-    if (visible && !wasVisible && !reducedMotion) {
-      lastFrame = performance.now();
-      requestAnimationFrame(renderFrame);
+    if (visible && !wasVisible && !reducedMotion.matches) {
+      cancelAnimationFrame(animationFrame);
+      lastTime = performance.now();
+      animationFrame = requestAnimationFrame(render);
     }
-  }, { rootMargin: "120px" });
+  }, { rootMargin: "160px" });
 
-  if (!initializeWebGL()) initializeFallback();
-  observer.observe(stage);
-  window.addEventListener("scroll", updateScrollTarget, { passive: true });
+  window.addEventListener("scroll", updateProgressTarget, { passive: true });
   window.addEventListener("resize", () => {
     resize();
-    updateScrollTarget();
+    updateProgressTarget();
   }, { passive: true });
-  updateScrollTarget();
-  updateStory(0);
+  reducedMotion.addEventListener?.("change", () => window.location.reload());
+
+  stage.dataset.renderer = "canvas-2d";
+  visibilityObserver.observe(stage);
   resize();
-  requestAnimationFrame(renderFrame);
+  updateProgressTarget();
+  updatePhase();
+  updatePanels();
+  animationFrame = requestAnimationFrame(render);
 })();

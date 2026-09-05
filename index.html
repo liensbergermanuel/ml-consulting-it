@@ -315,6 +315,7 @@
     }
   </style>
   <link rel="stylesheet" href="/refresh.css?v=20260904-3">
+  <link rel="stylesheet" href="/premium-v3.css?v=20260905-2">
 </head>
 <body>
   <header class="topbar">
@@ -343,15 +344,15 @@
   </header>
 
   <main id="top">
-    <section class="hero hero-immersive">
+    <section class="hero hero-immersive" aria-labelledby="heroTitle">
       <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
       <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
       <div class="wrap hero-grid">
         <div class="hero-copy">
           <div class="hero-kicker" data-k="heroEyebrow">Ihr Projektbegleiter für Baumaschinen</div>
-          <h1 data-k="heroTitle">Ihr Projekt. Persönlich begleitet<span class="orange">.</span></h1>
-          <p class="lead" data-k="heroLead">Ich bin Ihr Projektbegleiter – von der ersten Idee bis zur sicheren Übergabe.</p>
-          <p class="hero-description" data-k="heroText">Ich begleite Sie beim Kauf oder Verkauf von Baumaschinen – persönlich, strukturiert und mit einem klaren Blick für Technik, Markt und Abwicklung.</p>
+          <h1 id="heroTitle" data-k="heroTitle">Aus Komplexität wird Klarheit<span class="orange">.</span></h1>
+          <p class="lead" data-k="heroLead">Ihr persönlicher Projektbegleiter für Baumaschinen.</p>
+          <p class="hero-description" data-k="heroText">Ich ordne Anforderungen, Angebote und Risiken – und führe Ihr Projekt persönlich bis zur sicheren Übergabe.</p>
           <div class="hero-actions">
             <a class="btn hero-primary" href="#kontakt" data-k="heroContact">Unverbindlich anfragen →</a>
             <a class="hero-secondary" href="#leistungen" data-k="heroMore">So unterstütze ich Sie</a>
@@ -362,16 +363,57 @@
             <span><strong data-k="heroRegion">Südtirol / Italien</strong><small data-k="proofRegion">Persönlich vor Ort</small></span>
           </div>
         </div>
-        <div id="heroStage" class="hero-stage" aria-label="Visuelle Darstellung des Beratungsprozesses">
-          <div class="stage-chapter" aria-hidden="true"><span data-k="stageLabel">Projektbegleitung</span><strong id="stageChapterNumber">01</strong><small>/ 04</small></div>
+        <div id="heroStage" class="hero-stage data-stage" aria-label="Animierte Darstellung des Beratungsprozesses">
           <canvas id="heroCanvas" class="hero-canvas" aria-hidden="true"></canvas>
-          <div class="stage-point stage-point-one"><span>01</span><strong data-k="panelAction">Projekt besprechen</strong></div>
-          <div class="stage-point stage-point-two"><span>02</span><strong data-k="panelSearch">Gezielte Suche</strong></div>
-          <div class="stage-point stage-point-three"><span>03</span><strong data-k="panelReview">Fundierte Bewertung</strong></div>
-          <div class="stage-point stage-point-four"><span>04</span><strong data-k="panelHandle">Vermittlung &amp; Abwicklung</strong></div>
-          <div class="stage-status">
-            <span class="stage-status-dot" aria-hidden="true"></span>
-            <div><small data-k="panelStatus">Persönlich betreut</small><strong data-k="visualTitle">Ein Ansprechpartner für den gesamten Ablauf</strong></div>
+          <div class="stage-chapter" aria-hidden="true"><span data-k="stageLabel">Projektbegleitung</span><strong id="stageChapterNumber">01</strong><small>/ 04</small></div>
+
+          <div class="data-universe" aria-hidden="true">
+            <article class="data-panel data-panel-brief" data-scene-panel="0" data-scene-phase="0">
+              <header><span>01</span><strong data-k="panelAction">Projekt besprechen</strong></header>
+              <div class="check-list"><i></i><b></b><i></i><b></b><i></i><b></b></div>
+            </article>
+            <article class="data-panel data-panel-market" data-scene-panel="1" data-scene-phase="1">
+              <header><span>02</span><strong data-k="dataMarket">Marktanalyse</strong></header>
+              <div class="bar-chart"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="data-panel data-panel-search" data-scene-panel="2" data-scene-phase="1">
+              <header><span>02</span><strong data-k="panelSearch">Gezielte Suche</strong></header>
+              <div class="radar"><i></i><i></i><i></i></div>
+            </article>
+            <article class="data-panel data-panel-tech" data-scene-panel="3" data-scene-phase="2">
+              <header><span>03</span><strong data-k="dataTech">Technische Daten</strong></header>
+              <div class="tech-lines"><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="data-panel data-panel-value" data-scene-panel="4" data-scene-phase="2">
+              <header><span>03</span><strong data-k="panelReview">Fundierte Bewertung</strong></header>
+              <div class="line-chart"><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="data-panel data-panel-risk" data-scene-panel="5" data-scene-phase="2">
+              <header><span>03</span><strong data-k="dataRisk">Risiken</strong></header>
+              <div class="check-list"><i></i><b></b><i></i><b></b><i></i><b></b></div>
+            </article>
+            <article class="data-panel data-panel-handle" data-scene-panel="6" data-scene-phase="3">
+              <header><span>04</span><strong data-k="panelHandle">Vermittlung &amp; Abwicklung</strong></header>
+              <div class="document-lines"><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="data-panel data-panel-result" data-scene-panel="7" data-scene-phase="3">
+              <header><span>04</span><strong data-k="dataHandover">Sichere Übergabe</strong></header>
+              <div class="result-seal"><i></i></div>
+            </article>
+          </div>
+
+          <div class="project-route" aria-hidden="true">
+            <span class="route-node route-node-one"></span>
+            <span class="route-node route-node-two"></span>
+            <span class="route-node route-node-three"></span>
+            <span class="route-node route-node-four"></span>
+          </div>
+
+          <div class="project-track">
+            <div class="stage-point stage-point-one"><span>01</span><strong data-k="stageConsulting">Beratung</strong></div>
+            <div class="stage-point stage-point-two"><span>02</span><strong data-k="stageSearch">Suche</strong></div>
+            <div class="stage-point stage-point-three"><span>03</span><strong data-k="stageAssessment">Bewertung</strong></div>
+            <div class="stage-point stage-point-four"><span>04</span><strong data-k="stageHandling">Abwicklung</strong></div>
           </div>
         </div>
       </div>
@@ -588,8 +630,8 @@
       DE: {
         metaTitle: "ML Consulting | Baumaschinenvermittlung & Beratung", metaDescription: "ML Consulting begleitet die Suche, Bewertung, Vermittlung und Abwicklung von Baumaschinen in Südtirol und Umgebung.",
         navServices: "Leistungen", navClients: "Kompetenz", navProcess: "Ablauf", navAbout: "Über mich", navContact: "Kontakt", mobileCall: "Anrufen", mobileEnquiry: "Anfrage senden",
-        heroEyebrow: "Ihr Projektbegleiter für Baumaschinen", heroTitle: "Ihr Projekt. Persönlich begleitet<span class=\"orange\">.</span>", heroLead: "Ich bin Ihr Projektbegleiter – von der ersten Idee bis zur sicheren Übergabe.", heroText: "Ich begleite Sie beim Kauf oder Verkauf von Baumaschinen – persönlich, strukturiert und mit einem klaren Blick für Technik, Markt und Abwicklung.", heroRegion: "Südtirol / Italien", heroContact: "Projekt unverbindlich besprechen →", heroMore: "Meine Begleitung", heroAlt: "Räumlicher Projektpfad mit vier begleiteten Etappen", trust1: "Direkt erreichbar", trust2: "Klare nächste Schritte", trust3: "Praxisnah beraten",
-        visualTitle: "Ein Ansprechpartner für den gesamten Ablauf", visualText: "Von der ersten Idee bis zur geregelten Übergabe.", stageLabel: "Projektbegleitung", panelStatus: "Persönlich betreut", panelContact: "Direkter Kontakt ohne Umwege", panelAction: "Projekt besprechen", panelSearch: "Gezielte Suche", panelReview: "Fundierte Bewertung", panelHandle: "Vermittlung & Abwicklung", tick1: "Bedarf klären", tick2: "Maschine suchen", tick3: "Angebot bewerten", tick4: "Verhandlung begleiten", tick5: "Abwicklung koordinieren",
+        heroEyebrow: "Projekte · Märkte · Entscheidungen", heroTitle: "Aus Komplexität wird Klarheit<span class=\"orange\">.</span>", heroLead: "Ihr persönlicher Projektbegleiter für Baumaschinen.", heroText: "Ich ordne Anforderungen, Angebote und Risiken – und führe Ihr Projekt persönlich bis zur sicheren Übergabe.", heroRegion: "Südtirol / Italien", heroContact: "Projekt unverbindlich besprechen →", heroMore: "Meine Begleitung", heroAlt: "Räumlicher Projektpfad mit vier begleiteten Etappen", trust1: "Direkt erreichbar", trust2: "Klare nächste Schritte", trust3: "Praxisnah beraten",
+        visualTitle: "Ein Ansprechpartner für den gesamten Ablauf", visualText: "Von der ersten Idee bis zur geregelten Übergabe.", stageLabel: "Projektbegleitung", panelStatus: "Persönlich betreut", panelContact: "Direkter Kontakt ohne Umwege", panelAction: "Projekt besprechen", panelSearch: "Gezielte Suche", panelReview: "Fundierte Bewertung", panelHandle: "Vermittlung & Abwicklung", dataMarket: "Marktanalyse", dataTech: "Technische Daten", dataRisk: "Risiken", dataHandover: "Sichere Übergabe", stageConsulting: "Beratung", stageSearch: "Suche", stageAssessment: "Bewertung", stageHandling: "Abwicklung", tick1: "Bedarf klären", tick2: "Maschine suchen", tick3: "Angebot bewerten", tick4: "Verhandlung begleiten", tick5: "Abwicklung koordinieren",
         servicesEyebrow: "Leistungen", servicesTitle: "Ein Partner, der Ihr Projekt zusammenhält.", servicesLead: "Ich unterstütze Sie beim Kauf oder Verkauf von Baumaschinen – mit Marktkenntnis, Erfahrung und einem klaren Prozess.",
         service1Title: "Persönliche Beratung", service1Text: "Wir klären gemeinsam Einsatz, Anforderungen, Zeitrahmen und Budget.", service2Title: "Gezielte Maschinensuche", service2Text: "Ich recherchiere passende Angebote und treffe eine belastbare Vorauswahl.", service3Title: "Marktgerechte Bewertung", service3Text: "Preis, Ausstattung, Zustand und Unterlagen werden nachvollziehbar eingeordnet.", service4Title: "Sichere Abwicklung", service4Text: "Ich koordiniere die vereinbarten Schritte bis zur geregelten Übergabe.",
         proofEyebrow: "Kompetenz", proofTitle: "Erfahrung, die Entscheidungen einfacher macht.", proofText: "Technisches Verständnis und Vertriebserfahrung aus einer Hand – direkt, praxisnah und persönlich.", proofYears: "Jahre Branchenpraxis", proofTechValue: "Technik & Vertrieb", proofTech: "Praxis und Marktverständnis", proofLanguages: "Beratung in zwei Sprachen", proofRegionValue: "Südtirol", proofRegion: "Persönlich vor Ort",
@@ -602,8 +644,8 @@
       IT: {
         metaTitle: "ML Consulting | Intermediazione e consulenza macchine edili", metaDescription: "ML Consulting segue ricerca, valutazione, intermediazione e gestione di macchine edili in Alto Adige e dintorni.",
         navServices: "Servizi", navClients: "Competenze", navProcess: "Come lavoro", navAbout: "Chi sono", navContact: "Contatto", mobileCall: "Chiama", mobileEnquiry: "Invia richiesta",
-        heroEyebrow: "Il vostro partner di progetto per le macchine edili", heroTitle: "Il vostro progetto. Seguito personalmente<span class=\"orange\">.</span>", heroLead: "Sono il vostro partner di progetto – dalla prima idea alla consegna sicura.", heroText: "Vi accompagno nell’acquisto o nella vendita di macchine edili – personalmente, con metodo e con una visione chiara di tecnica, mercato e gestione.", heroRegion: "Alto Adige / Italia", heroContact: "Parliamo del progetto →", heroMore: "Il mio supporto", heroAlt: "Percorso tridimensionale con quattro fasi seguite", trust1: "Contatto diretto", trust2: "Prossimi passi chiari", trust3: "Consulenza concreta",
-        visualTitle: "Un referente per l’intero processo", visualText: "Dalla prima idea fino alla consegna organizzata.", stageLabel: "Accompagnamento", panelStatus: "Seguiti personalmente", panelContact: "Contatto diretto, senza passaggi inutili", panelAction: "Parliamo del progetto", panelSearch: "Ricerca mirata", panelReview: "Valutazione fondata", panelHandle: "Intermediazione e gestione", tick1: "Definire le esigenze", tick2: "Cercare la macchina", tick3: "Valutare l’offerta", tick4: "Seguire la trattativa", tick5: "Coordinare la gestione",
+        heroEyebrow: "Progetti · Mercati · Decisioni", heroTitle: "Dalla complessità alla chiarezza<span class=\"orange\">.</span>", heroLead: "Il vostro referente personale per progetti di macchine edili.", heroText: "Metto ordine tra requisiti, offerte e rischi e accompagno personalmente il progetto fino alla consegna sicura.", heroRegion: "Alto Adige / Italia", heroContact: "Parliamo del progetto →", heroMore: "Il mio supporto", heroAlt: "Percorso tridimensionale con quattro fasi seguite", trust1: "Contatto diretto", trust2: "Prossimi passi chiari", trust3: "Consulenza concreta",
+        visualTitle: "Un referente per l’intero processo", visualText: "Dalla prima idea fino alla consegna organizzata.", stageLabel: "Accompagnamento", panelStatus: "Seguiti personalmente", panelContact: "Contatto diretto, senza passaggi inutili", panelAction: "Parliamo del progetto", panelSearch: "Ricerca mirata", panelReview: "Valutazione fondata", panelHandle: "Intermediazione e gestione", dataMarket: "Analisi di mercato", dataTech: "Dati tecnici", dataRisk: "Rischi", dataHandover: "Consegna sicura", stageConsulting: "Consulenza", stageSearch: "Ricerca", stageAssessment: "Valutazione", stageHandling: "Gestione", tick1: "Definire le esigenze", tick2: "Cercare la macchina", tick3: "Valutare l’offerta", tick4: "Seguire la trattativa", tick5: "Coordinare la gestione",
         servicesEyebrow: "Servizi", servicesTitle: "Il vostro partner per decisioni fondate.", servicesLead: "Vi supporto nell’acquisto o nella vendita di macchine edili con conoscenza del mercato, esperienza e un processo chiaro.",
         service1Title: "Consulenza personale", service1Text: "Definiamo insieme impiego, requisiti, tempistiche e budget.", service2Title: "Ricerca mirata", service2Text: "Cerco offerte adatte e preparo una selezione affidabile.", service3Title: "Valutazione di mercato", service3Text: "Prezzo, dotazioni, condizioni e documenti vengono valutati con chiarezza.", service4Title: "Gestione sicura", service4Text: "Coordino i passaggi concordati fino alla consegna organizzata.",
         proofEyebrow: "Competenze", proofTitle: "Esperienza che rende le decisioni più semplici.", proofText: "Competenza tecnica ed esperienza commerciale in un unico referente – diretto, concreto e personale.", proofYears: "Anni di esperienza nel settore", proofTechValue: "Tecnica & vendita", proofTech: "Esperienza pratica e conoscenza del mercato", proofLanguages: "Consulenza in due lingue", proofRegionValue: "Alto Adige", proofRegion: "Personalmente sul territorio",
@@ -616,8 +658,8 @@
       EN: {
         metaTitle: "ML Consulting | Construction equipment brokerage & consulting", metaDescription: "ML Consulting supports the search, valuation, brokerage and handling of construction equipment in South Tyrol and the surrounding region.",
         navServices: "Services", navClients: "Expertise", navProcess: "Process", navAbout: "About me", navContact: "Contact", mobileCall: "Call", mobileEnquiry: "Send enquiry",
-        heroEyebrow: "Your project partner for construction equipment", heroTitle: "Your project. Personally guided<span class=\"orange\">.</span>", heroLead: "I am your project partner – from the first idea to a secure handover.", heroText: "I guide you through buying or selling construction equipment – personally, systematically and with a clear view of technology, market and handling.", heroRegion: "South Tyrol / Italy", heroContact: "Discuss your project →", heroMore: "My support", heroAlt: "Three-dimensional project path with four guided stages", trust1: "Directly available", trust2: "Clear next steps", trust3: "Practical advice",
-        visualTitle: "One contact for the entire process", visualText: "From the first idea through to an organised handover.", stageLabel: "Project guidance", panelStatus: "Personally supported", panelContact: "Direct contact without detours", panelAction: "Discuss your project", panelSearch: "Targeted search", panelReview: "Informed assessment", panelHandle: "Brokerage & handling", tick1: "Define requirements", tick2: "Find equipment", tick3: "Assess the offer", tick4: "Support negotiation", tick5: "Coordinate handling",
+        heroEyebrow: "Projects · Markets · Decisions", heroTitle: "From complexity to clarity<span class=\"orange\">.</span>", heroLead: "Your personal project partner for construction equipment.", heroText: "I bring structure to requirements, offers and risks and personally guide your project through to a secure handover.", heroRegion: "South Tyrol / Italy", heroContact: "Discuss your project →", heroMore: "My support", heroAlt: "Three-dimensional project path with four guided stages", trust1: "Directly available", trust2: "Clear next steps", trust3: "Practical advice",
+        visualTitle: "One contact for the entire process", visualText: "From the first idea through to an organised handover.", stageLabel: "Project guidance", panelStatus: "Personally supported", panelContact: "Direct contact without detours", panelAction: "Discuss your project", panelSearch: "Targeted search", panelReview: "Informed assessment", panelHandle: "Brokerage & handling", dataMarket: "Market analysis", dataTech: "Technical data", dataRisk: "Risks", dataHandover: "Secure handover", stageConsulting: "Consulting", stageSearch: "Search", stageAssessment: "Assessment", stageHandling: "Handling", tick1: "Define requirements", tick2: "Find equipment", tick3: "Assess the offer", tick4: "Support negotiation", tick5: "Coordinate handling",
         servicesEyebrow: "Services", servicesTitle: "Your partner for informed decisions.", servicesLead: "I support the purchase or sale of construction equipment with market knowledge, experience and a clear process.",
         service1Title: "Personal advice", service1Text: "Together we define the application, requirements, timeframe and budget.", service2Title: "Targeted equipment search", service2Text: "I research suitable offers and prepare a reliable shortlist.", service3Title: "Market-based assessment", service3Text: "Price, specification, condition and documents are assessed transparently.", service4Title: "Secure handling", service4Text: "I coordinate the agreed steps through to an organised handover.",
         proofEyebrow: "Expertise", proofTitle: "Experience that makes decisions easier.", proofText: "Technical understanding and sales experience from one contact – direct, practical and personal.", proofYears: "Years of industry experience", proofTechValue: "Technical & sales", proofTech: "Practical and market expertise", proofLanguages: "Advice in two languages", proofRegionValue: "South Tyrol", proofRegion: "Personally available locally",
@@ -630,8 +672,8 @@
       ES: {
         metaTitle: "ML Consulting | Intermediación y asesoramiento de maquinaria", metaDescription: "ML Consulting acompaña la búsqueda, valoración, intermediación y gestión de maquinaria de construcción en Tirol del Sur y alrededores.",
         navServices: "Servicios", navClients: "Experiencia", navProcess: "Proceso", navAbout: "Sobre mí", navContact: "Contacto", mobileCall: "Llamar", mobileEnquiry: "Enviar consulta",
-        heroEyebrow: "Su acompañante de proyecto para maquinaria", heroTitle: "Su proyecto. Acompañado personalmente<span class=\"orange\">.</span>", heroLead: "Soy su acompañante de proyecto – desde la primera idea hasta una entrega segura.", heroText: "Le acompaño en la compra o venta de maquinaria – personalmente, con método y con una visión clara de técnica, mercado y gestión.", heroRegion: "Tirol del Sur / Italia", heroContact: "Hablemos de su proyecto →", heroMore: "Mi acompañamiento", heroAlt: "Recorrido tridimensional con cuatro etapas acompañadas", trust1: "Contacto directo", trust2: "Siguientes pasos claros", trust3: "Asesoramiento práctico",
-        visualTitle: "Un contacto para todo el proceso", visualText: "Desde la primera idea hasta una entrega organizada.", stageLabel: "Acompañamiento", panelStatus: "Atención personal", panelContact: "Contacto directo, sin rodeos", panelAction: "Hablemos del proyecto", panelSearch: "Búsqueda dirigida", panelReview: "Valoración fundada", panelHandle: "Intermediación y gestión", tick1: "Definir necesidades", tick2: "Buscar la máquina", tick3: "Valorar la oferta", tick4: "Acompañar la negociación", tick5: "Coordinar la gestión",
+        heroEyebrow: "Proyectos · Mercados · Decisiones", heroTitle: "De la complejidad a la claridad<span class=\"orange\">.</span>", heroLead: "Su acompañante personal para proyectos de maquinaria.", heroText: "Ordeno requisitos, ofertas y riesgos y acompaño personalmente su proyecto hasta una entrega segura.", heroRegion: "Tirol del Sur / Italia", heroContact: "Hablemos de su proyecto →", heroMore: "Mi acompañamiento", heroAlt: "Recorrido tridimensional con cuatro etapas acompañadas", trust1: "Contacto directo", trust2: "Siguientes pasos claros", trust3: "Asesoramiento práctico",
+        visualTitle: "Un contacto para todo el proceso", visualText: "Desde la primera idea hasta una entrega organizada.", stageLabel: "Acompañamiento", panelStatus: "Atención personal", panelContact: "Contacto directo, sin rodeos", panelAction: "Hablemos del proyecto", panelSearch: "Búsqueda dirigida", panelReview: "Valoración fundada", panelHandle: "Intermediación y gestión", dataMarket: "Análisis de mercado", dataTech: "Datos técnicos", dataRisk: "Riesgos", dataHandover: "Entrega segura", stageConsulting: "Asesoramiento", stageSearch: "Búsqueda", stageAssessment: "Valoración", stageHandling: "Gestión", tick1: "Definir necesidades", tick2: "Buscar la máquina", tick3: "Valorar la oferta", tick4: "Acompañar la negociación", tick5: "Coordinar la gestión",
         servicesEyebrow: "Servicios", servicesTitle: "Su socio para decisiones fundamentadas.", servicesLead: "Le apoyo en la compra o venta de maquinaria con conocimiento del mercado, experiencia y un proceso claro.",
         service1Title: "Asesoramiento personal", service1Text: "Definimos juntos la aplicación, los requisitos, el plazo y el presupuesto.", service2Title: "Búsqueda dirigida", service2Text: "Busco ofertas adecuadas y preparo una selección fiable.", service3Title: "Valoración de mercado", service3Text: "Precio, equipamiento, estado y documentos se valoran de forma transparente.", service4Title: "Gestión segura", service4Text: "Coordino los pasos acordados hasta una entrega organizada.",
         proofEyebrow: "Experiencia", proofTitle: "Experiencia que facilita las decisiones.", proofText: "Conocimientos técnicos y experiencia comercial en un único contacto: directo, práctico y personal.", proofYears: "Años de experiencia en el sector", proofTechValue: "Técnica y ventas", proofTech: "Experiencia práctica y conocimiento del mercado", proofLanguages: "Asesoramiento en dos idiomas", proofRegionValue: "Tirol del Sur", proofRegion: "Atención personal en la región",
@@ -759,6 +801,6 @@
       window.location.href = `mailto:ml.consulting@outlook.it?subject=${subject}&body=${body}`;
     });
   </script>
-    <script src="/hero-3d.js?v=20260904-5"></script>
+    <script src="/hero-3d.js?v=20260905-2"></script>
 </body>
 </html>
